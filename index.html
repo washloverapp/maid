@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="th" class="">
+<!-- Alpine.js for UI interactions -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" class="w-full" content="width=device-width, initial-scale=1.0">
+    <title>Laundry Service & POS Flow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#35A4E5',
+                            darkBlue: '#1A237E',
+                            amber: '#FFB300'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Prompt', 'Helvetica Neue', sans-serif;
+        }
+        
+         ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+         ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+         ::-webkit-scrollbar-thumb {
+            background: #CCCCCC;
+            border-radius: 10px;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4B5563;
+        }
+        
+        .active-sidebar {
+            background-color: #35A4E5 !important;
+            color: white !important;
+        }
+        
+        .active-step-bar {
+            background-color: #35A4E5 !important;
+            color: white !important;
+        }
+        /* --- Universal On-Screen Keyboard Styles --- */
+        
+        .kb-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background-color: rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: flex-end;
+        }
+        
+        .kb-overlay.visible {
+            display: flex;
+        }
+        
+        .kb-container {
+            width: 100%;
+            background-color: #d1d5db;
+            /* bg-gray-300 */
+            padding: 8px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark .kb-container {
+            background-color: #1f2937;
+            /* dark:bg-gray-800 */
+        }
+        
+        .kb-display {
+            width: 100%;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            min-height: 44px;
+            font-size: 1.125rem;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .dark .kb-display {
+            background-color: #374151;
+            /* dark:bg-gray-600 */
+            color: #ffffff;
+            border-color: #4b5563;
+        }
+        
+        .kb-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .kb-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .kb-key {
+            height: 48px;
+            flex-grow: 1;
+            flex-basis: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            background-color: #f9fafb;
+            /* bg-gray-50 */
+            color: #111827;
+            /* text-gray-900 */
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.1s;
+        }
+        
+        .dark .kb-key {
+            background-color: #4b5563;
+            /* dark:bg-gray-500 */
+            color: #ffffff;
+        }
+        
+        .kb-key:active {
+            background-color: #9ca3af;
+            /* bg-gray-400 */
+        }
+        
+        .kb-key.action {
+            background-color: #d1d5db;
+            /* bg-gray-300 */
+        }
+        
+        .dark .kb-key.action {
+            background-color: #374151;
+            /* dark:bg-gray-600 */
+        }
+        
+        .kb-key.primary {
+            background-color: #35A4E5;
+            color: white;
+        }
+        
+        .kb-key.danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .kb-key[data-key="space"] {
+            flex-grow: 5;
+        }
+        
+        .kb-key[data-key="shift"] i,
+        .kb-key[data-key="backspace"] i {
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col lg:flex-row overflow-hidden bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 transition-colors duration-200 pb-[320px] lg:pb-0">
+
+    <!-- 1. หน้าจอเข้าสู่ระบบ (Login Screen Overlay) -->
+    <div id="login-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 p-4 transition-all duration-300">
+        <div class="absolute top-4 right-4">
+            <button onclick="toggleTheme()" class="p-3 bg-white dark:bg-slate-900 rounded-full shadow-md text-gray-600 dark:text-gray-300">
+                <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                <i class="fa-solid fa-sun hidden dark:block text-lg text-brand-amber"></i>
+            </button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-800 text-center">
+            <img src="https://img1.pic.in.th/images/logo456088f73b0d57f4.png" alt="Logo" class="h-24 w-auto object-contain mx-auto mb-4">
+            <h2 class="text-2xl font-bold mb-1">ยินดีต้อนรับสู่ Washlover</h2>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mb-6">กรุณาเข้าสู่ระบบเพื่อดำเนินการส่งซักผ้า</p>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">ชื่อผู้ใช้งาน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </span>
+                        <input type="text" id="username" required value="admin" inputmode="none" readonly class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">รหัสผ่าน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </span>
+                        <input type="password" id="password" required value="1234" inputmode="none" readonly class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-brand-blue hover:bg-opacity-90 text-white rounded-xl font-bold text-base shadow-md transition-all mt-2">
+                    เข้าสู่ระบบ
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Header -->
+    <header class="lg:hidden flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 z-30 shadow-sm">
+        <button onclick="toggleSidebar()" class="text-gray-600 dark:text-gray-300 p-2 focus:outline-none">
+            <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+        <div class="flex items-center">
+            <img src="https://img1.pic.in.th/images/logo456088f73b0d57f4.png" alt="Logo" class="h-10 w-auto object-contain">
+        </div>
+        <div class="flex items-center space-x-1">
+            <button onclick="toggleTheme()" class="p-2 text-gray-600 dark:text-gray-300 focus:outline-none">
+                <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                <i class="fa-solid fa-sun hidden dark:block text-lg text-brand-amber"></i>
+            </button>
+            <button onclick="toggleCartMobile()" class="relative p-2 text-gray-600 dark:text-gray-300 focus:outline-none">
+                <i class="fa-solid fa-basket-shopping text-xl"></i>
+                <span id="cart-badge"
+                    class="hidden absolute top-0 right-0 bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/50 z-40 transition-opacity lg:hidden"></div>
+
+    <!-- Sidebar Drawer -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-900 h-full flex flex-col justify-between p-5 border-r border-gray-100 dark:border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 lg:static lg:z-auto">
+        <div class="relative">
+            <!-- Header Brand -->
+            <div class="flex items-center justify-center mb-6 mt-2 lg:my-6">
+                <img src="https://img1.pic.in.th/images/logo456088f73b0d57f4.png" alt="Logo" class="h-16 lg:h-24 w-auto object-contain mx-auto">
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 dark:text-gray-400 p-2 absolute right-0 top-0">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <nav class="space-y-1">
+                <button onclick="switchPage('หน้าแรก')" id="menu-home" class="active-sidebar w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-200">
+                    <i class="fa-solid fa-house w-5 text-center"></i>
+                    <span>หน้าแรก</span>
+                </button>
+                <button onclick="lockScreen()" id="menu-lock" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-200">
+                    <i class="fa-solid fa-lock w-5 text-center"></i>
+                    <span>ล็อกหน้าจอ</span>
+                </button>
+                <button onclick="switchPage('ประวัติส่งซัก')" id="menu-history" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-200">
+                    <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i>
+                    <span>ประวัติส่งซัก</span>
+                </button>
+
+                <button onclick="switchPage('ตั้งค่า')" id="menu-setting" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-200">
+                    <i class="fa-solid fa-gear w-5 text-center"></i>
+                    <span>ตั้งค่า</span>
+                </button>
+            </nav>
+        </div>
+
+        <div class="space-y-2">
+            <a href="admin.html" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-200">
+                <i class="fa-solid fa-user-shield w-5 text-center"></i>
+                <span>ผู้ดูแลระบบ</span>
+            </a>
+            <button onclick="toggleTheme()" class="hidden lg:flex w-full items-center justify-between px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800 transition-all duration-200">
+                <span class="flex items-center space-x-3">
+                    <i class="fa-solid fa-moon dark:hidden w-5 text-center"></i>
+                    <i class="fa-solid fa-sun hidden dark:block w-5 text-center text-brand-amber"></i>
+                    <span class="dark:hidden">โหมดมืด</span>
+                    <span class="hidden dark:inline">โหมดสว่าง</span>
+                </span>
+            </button>
+            <button onclick="handleLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all duration-200">
+                <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
+                <span>ออกจากระบบ</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto">
+
+        <!-- Page: หน้าแรก (ระบบจองแบบลำดับขั้นตอน Wizard) -->
+        <section id="page-home" class="flex flex-col h-full">
+
+            <!-- Wizard Stepper Header -->
+            <div class="mb-6 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                <div class="flex items-center justify-between overflow-x-auto gap-4 py-2">
+                    <button onclick="jumpToStep(1)" class="flex items-center space-x-2 focus:outline-none min-w-fit">
+                        <span id="step-num-1"
+                            class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-brand-blue text-white">1</span>
+                        <span class="text-sm font-bold">เครื่องซัก</span>
+                    </button>
+                    <div class="h-0.5 bg-gray-200 dark:bg-slate-700 flex-1 min-w-[20px]"></div>
+                    <button onclick="jumpToStep(2)" class="flex items-center space-x-2 focus:outline-none min-w-fit">
+                        <span id="step-num-2"
+                            class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-100 dark:bg-slate-800 text-gray-400">2</span>
+                        <span class="text-sm font-semibold text-gray-400" id="step-text-2">เครื่องอบ</span>
+                    </button>
+                    <div class="h-0.5 bg-gray-200 dark:bg-slate-700 flex-1 min-w-[20px]"></div>
+                    <button onclick="jumpToStep(3)" class="flex items-center space-x-2 focus:outline-none min-w-fit">
+                        <span id="step-num-3"
+                            class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-100 dark:bg-slate-800 text-gray-400">3</span>
+                        <span class="text-sm font-semibold text-gray-400" id="step-text-3">น้ำยาซักผ้า</span>
+                    </button>
+                    <div class="h-0.5 bg-gray-200 dark:bg-slate-700 flex-1 min-w-[20px]"></div>
+                    <button onclick="jumpToStep(4)" class="flex items-center space-x-2 focus:outline-none min-w-fit">
+                        <span id="step-num-4"
+                            class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-100 dark:bg-slate-800 text-gray-400">4</span>
+                        <span class="text-sm font-semibold text-gray-400" id="step-text-4">น้ำยาปรับผ้านุ่ม</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Step Title & Navigation -->
+            <div class="flex items-start sm:items-center justify-between mb-6 gap-3">
+                <div class="flex-1">
+                    <h1 id="current-step-title" class="text-xl sm:text-2xl font-bold text-brand-blue leading-tight">
+                        ขั้นตอนที่ 1: เลือกเครื่องซักผ้า</h1>
+                    <p id="current-step-desc" class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        กรุณาเลือกเครื่องซักผ้าที่คุณต้องการ</p>
+                </div>
+                <!-- Navigation controls -->
+                <div class="flex items-center space-x-2 shrink-0">
+                    <button id="prev-step-btn" disabled onclick="prevStep()" class="px-3 sm:px-4 py-2 bg-gray-100 dark:bg-slate-800 text-gray-500 rounded-xl font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors">
+                        <i class="fa-solid fa-chevron-left mr-1"></i> ย้อนกลับ
+                    </button>
+                    <button id="next-step-btn" onclick="nextStep()" class="px-3 sm:px-4 py-2 bg-brand-blue hover:bg-opacity-95 text-white rounded-xl font-bold text-sm flex items-center justify-center whitespace-nowrap transition-colors">
+                        <span id="next-btn-text">ถัดไป</span> <i id="next-btn-icon"
+                            class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Active Step Grid Container (บังคับการแสดงผลแถวละ 2 การ์ดสำหรับหน้าจอ 14 นิ้ว lg และ xl และ items-start เพื่อป้องกันการ์ดยืด) -->
+            <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 lg:gap-6 overflow-y-auto pr-2 pb-6 flex-1 items-start" id="menu-container">
+                <!-- Items will be dynamic based on active step -->
+            </div>
+        </section>
+
+        <!-- Page: จัดการบริการ (CRUD) -->
+        <section id="page-manage" class="hidden flex-col h-full">
+            <!-- This section is now managed in admin.html -->
+            <!-- This section is now managed in admin.html -->
+        </section>
+
+        <!-- Dynamic Page Container (Placeholder) -->
+        <section id="page-dynamic" class="hidden flex-1 flex flex-col items-center justify-center text-center p-6">
+            <div class="text-6xl text-gray-300 dark:text-slate-700 mb-4">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <h1 id="dynamic-title" class="text-xl lg:text-2xl font-bold text-gray-700 dark:text-gray-300">กำลังพัฒนาหน้า
+            </h1>
+            <p class="text-sm text-gray-400 mt-2">หน้านี้กำลังอยู่ระหว่างการพัฒนา กรุณากลับมาลองใหม่อีกครั้งภายหลัง</p>
+        </section>
+
+        <!-- Page: ประวัติส่งซัก (History) -->
+        <section id="page-history" class="hidden flex-col h-full">
+            <h1 class="text-2xl lg:text-3xl font-bold mb-6">ประวัติการส่งซัก</h1>
+            <div id="history-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 overflow-y-auto pr-2 pb-6 flex-1 items-start">
+                <!-- History cards will be generated here -->
+            </div>
+        </section>
+
+        <!-- Page: ตั้งค่า (Settings) -->
+        <section id="page-setting" class="hidden flex-col h-full">
+            <h1 class="text-2xl lg:text-3xl font-bold mb-6">ตั้งค่า</h1>
+            <div class="max-w-2xl w-full space-y-6">
+                <!-- Lock Screen Card -->
+                <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <i class="fa-solid fa-lock text-xl text-gray-400"></i>
+                            <div>
+                                <h2 class="font-bold">ล็อกหน้าจอ</h2>
+                                <p class="text-xs text-gray-400">ป้องกันการเข้าถึงโดยไม่ได้รับอนุญาต</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+    </main>
+
+    <!-- Cart Overlay for Mobile -->
+    <div id="cart-overlay" onclick="toggleCartMobile()" class="hidden fixed inset-0 bg-black/50 z-40 transition-opacity lg:hidden"></div>
+
+    <!-- Right Cart Sidebar -->
+    <aside id="cart-sidebar" class="fixed inset-y-0 right-0 w-80 bg-white dark:bg-slate-900 h-full flex flex-col justify-between border-l border-gray-100 dark:border-slate-800 p-6 shadow-sm transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 lg:static lg:z-auto">
+        <div>
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center space-x-2">
+                    <h2 class="text-xl font-bold">รายการที่เลือก</h2>
+                    <span id="cart-count" class="bg-brand-blue/10 text-brand-blue text-xs font-bold px-2.5 py-1 rounded-full">0</span>
+                </div>
+                <div class="flex items-center space-x-1">
+                    <button onclick="clearCart()" class="text-xs text-gray-400 hover:text-red-500 font-medium mr-2">ล้างทั้งหมด</button>
+                    <button onclick="toggleCartMobile()" class="lg:hidden text-gray-500 dark:text-gray-400 p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cart Items Scroll -->
+            <div class="overflow-y-auto space-y-3 my-2 pr-1 max-h-[calc(100vh-280px)] lg:max-h-[calc(100vh-320px)]" id="cart-container">
+                <!-- Cart items list -->
+            </div>
+        </div>
+
+        <div class="border-t border-gray-100 dark:border-slate-800 pt-4 space-y-3">
+            <div class="space-y-2">
+                <label for="member-phone" class="text-sm font-semibold text-gray-500 dark:text-gray-400">เบอร์สมาชิก</label>
+                <label for="member-phone" class="text-sm font-semibold text-gray-500 dark:text-gray-400">เบอร์โทร
+                    (ถ้ามี)</label>
+                <div class="flex space-x-2">
+                    <input type="tel" id="member-phone" placeholder="กรอกเบอร์โทรศัพท์ 10 หลัก" maxlength="10" oninput="handleMemberInput(this)" inputmode="none" readonly class="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                </div>
+            </div>
+            <div class="flex justify-between text-sm text-gray-400 dark:text-gray-500">
+                <span>ยอดรวม (Sub Total)</span>
+                <span id="subtotal" class="font-bold text-gray-800 dark:text-gray-200">฿0.00</span>
+            </div>
+            <div id="discount-row" class="hidden justify-between text-sm text-red-500">
+                <span>ส่วนลดสมาชิก (10%)</span>
+                <span id="discount-amount" class="font-bold">-฿0.00</span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-400 dark:text-gray-500">
+                <span>ภาษีบริการ PB (5%)</span>
+                <span id="tax" class="font-bold text-gray-800 dark:text-gray-200">฿0.00</span>
+            </div>
+
+            <button id="checkout-btn" disabled onclick="openPinModal()" class="w-full !mt-4 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white py-4 rounded-2xl font-bold text-lg shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                ยืนยันส่งซัก ฿0.00
+            </button>
+        </div>
+    </aside>
+
+    <!-- Modal: Add/Edit Service -->
+    <div id="service-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <!-- This modal is now managed in admin.html -->
+    </div>
+
+    <!-- Modal: Receipt -->
+    <div id="receipt-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-[380px] p-6 rounded-3xl shadow-2xl flex flex-col">
+            <!-- Receipt Header -->
+            <div id="receipt-header" class="text-center border-b border-dashed border-gray-300 dark:border-slate-700 pb-4 mb-4">
+                <h3 id="receipt-shop-name" class="text-xl font-bold">Washlover</h3>
+                <p id="receipt-shop-address" class="text-xs text-gray-500 mt-1"></p>
+                <p id="receipt-shop-phone" class="text-xs text-gray-500"></p>
+                <p id="receipt-title" class="text-sm text-gray-500 mt-2">ใบสรุปรายการ</p>
+                <p id="receipt-date" class="text-xs text-gray-400 mt-2"></p>
+                <p id="receipt-order-id" class="text-xs text-gray-400"></p>
+            </div>
+
+            <!-- Receipt Items -->
+            <div class="flex-1 overflow-y-auto -mx-2 px-2 max-h-60">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-dashed border-gray-300 dark:border-slate-700">
+                            <th class="text-left font-semibold pb-2">รายการ</th>
+                            <th class="text-center font-semibold pb-2">จำนวน</th>
+                            <th class="text-right font-semibold pb-2">ราคา</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receipt-items-body">
+                        <!-- Items will be generated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Receipt Summary -->
+            <div class="border-t border-dashed border-gray-300 dark:border-slate-700 pt-4 mt-4 space-y-2 text-sm">
+                <div class="flex justify-between text-gray-500"><span>ยอดรวม</span><span id="receipt-subtotal"></span>
+                </div>
+                <div id="receipt-discount-row" class="hidden justify-between text-red-500">
+                    <span>ส่วนลดสมาชิก</span><span id="receipt-discount"></span></div>
+                <div class="flex justify-between text-gray-500"><span>ภาษีบริการ (5%)</span><span id="receipt-tax"></span></div>
+                <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                    <span>ยอดสุทธิ</span><span id="receipt-total"></span></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-6 space-y-2">
+                <button onclick="printAndProceed()" class="w-full bg-brand-blue hover:bg-opacity-90 text-white py-3 rounded-xl font-bold text-md flex items-center justify-center space-x-2"><i
+                        class="fa-solid fa-print"></i> <span>พิมพ์ใบเสร็จและดำเนินการต่อ</span></button>
+                <button onclick="closeReceiptModal()" class="w-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 py-2.5 rounded-xl font-bold text-sm">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Thai QR Code Payment -->
+    <div id="qrcode-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-[360px] p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center">
+            <h3 class="text-xl lg:text-2xl font-bold text-brand-darkBlue dark:text-white mb-1">Thai QR Payment</h3>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mb-6">สแกนเพื่อชำระค่าบริการ</p>
+
+            <div class="w-[200px] h-[200px] bg-brand-darkBlue p-3 rounded-2xl flex items-center justify-center">
+                <div class="w-full h-full bg-white rounded-xl flex flex-col items-center justify-center p-2">
+                    <i class="fa-solid fa-qrcode text-6xl text-gray-800 mb-1"></i>
+                    <span class="text-[10px] font-bold text-gray-500 leading-tight">QR CODE SIMULATOR</span>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-6">จำนวนเงินทั้งหมดที่ต้องชำระ</p>
+            <h4 id="modal-total" class="text-2xl lg:text-3xl font-bold text-brand-blue mt-1 mb-6">฿0.00</h4>
+
+            <button onclick="closeModalAndClear()" class="w-full bg-brand-darkBlue dark:bg-slate-800 text-white py-3 rounded-xl font-bold text-md hover:bg-opacity-90 transition-all">
+                ชำระเงินเสร็จสิ้น
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: PIN Confirmation -->
+    <div id="pin-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center">
+            <div class="w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-900/50 flex items-center justify-center mb-4">
+                <i class="fa-solid fa-key text-3xl text-sky-500"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">ยืนยันการทำรายการ</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">กรุณากรอกรหัสผ่าน 6 หลักเพื่อยืนยัน</p>
+            <div id="pin-display" class="flex items-center justify-center space-x-3 mb-4">
+                <!-- PIN dots will be generated here -->
+            </div>
+            <p id="pin-error-msg" class="text-red-500 text-xs mt-1 h-4 mb-2"></p>
+            <!-- PIN Pad -->
+            <div id="pin-pad-container" class="grid grid-cols-3 gap-3 w-full max-w-[240px]"><button onclick="handlePinInput('7')" class="pin-key">7</button><button onclick="handlePinInput('8')" class="pin-key">8</button><button onclick="handlePinInput('2')" class="pin-key">2</button><button onclick="handlePinInput('1')" class="pin-key">1</button>
+                <button onclick="handlePinInput('9')" class="pin-key">9</button><button onclick="handlePinInput('0')" class="pin-key">0</button><button onclick="handlePinInput('3')" class="pin-key">3</button><button onclick="handlePinInput('6')" class="pin-key">6</button>
+                <button onclick="handlePinInput('5')" class="pin-key">5</button>
+                <button onclick="handlePinInput('clear')" class="pin-key text-sm font-bold text-amber-600 dark:text-amber-500">ล้าง</button>
+                <button onclick="handlePinInput('4')" class="pin-key">4</button>
+                <button onclick="handlePinInput('backspace')" class="pin-key text-red-500"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+            <button onclick="closePinModal()" class="w-full mt-6 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 py-2.5 rounded-xl font-bold text-sm">ยกเลิก</button>
+        </div>
+    </div>
+
+    <!-- Modal: Screen Lock PIN -->
+    <div id="screen-lock-modal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4" style="background-image: url('https://img2.pic.in.th/Gemini_Generated_Image_f9ky5nf9ky5nf9ky.png'); background-size: cover; background-position: center;">
+        <!-- Dimming overlay, shown with PIN entry -->
+        <div id="lock-screen-dim-overlay" class="hidden absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300"></div>
+
+        <!-- Cover Screen (Date, Time, Unlock message) -->
+        <div id="lock-screen-cover" class="relative text-white text-center w-full h-full flex flex-col items-center justify-center cursor-pointer" onclick="showPinEntry()">
+            <div id="lock-screen-time" class="text-7xl font-bold tracking-tight" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3);"></div>
+            <div id="lock-screen-date" class="text-xl font-medium" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3);"></div>
+            <div class="absolute bottom-16 text-lg font-semibold animate-pulse" style="text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                Press Home to unlock
+            </div>
+        </div>
+
+        <!-- PIN Entry Screen (Initially hidden) -->
+        <div id="lock-screen-pin-entry" class="hidden relative bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl w-full max-w-sm p-6 rounded-3xl shadow-2xl flex-col items-center text-center">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                <i class="fa-solid fa-shield-halved text-3xl text-red-500"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">หน้าจอล็อกอยู่</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">กรุณากรอกรหัส PIN เพื่อปลดล็อก</p>
+
+            <div id="lock-pin-display" class="flex items-center justify-center space-x-3 mb-4"></div>
+            <p id="lock-pin-error-msg" class="text-red-500 text-xs mt-1 h-4 mb-2"></p>
+            <!-- PIN Pad -->
+            <div id="lock-pin-pad-container" class="grid grid-cols-3 gap-3 w-full max-w-[240px]"></div>
+            <button onclick="hidePinEntryAndShowCover()" class="w-full mt-6 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 py-2.5 rounded-xl font-bold text-sm">ยกเลิก</button>
+        </div>
+    </div>
+
+    <!-- Modal: Admin Login -->
+    <!-- Admin login is now in admin.html -->
+
+    <!-- Universal On-Screen Keyboard -->
+    <div id="kb-overlay" class="kb-overlay">
+        <div class="kb-container">
+            <div id="kb-display" class="kb-display"></div>
+            <div id="kb-layout-container">
+                <!-- Keyboard layouts will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ข้อมูลบริการหลักและรูปภาพทั้งหมด (อัปเดตตามลิ้งก์ที่ได้รับ)
+        const defaultMenuItems = [
+            // เครื่องซัก
+            {
+                id: 1,
+                name: "เครื่องซัก 1 (12kg)",
+                desc: "เครื่องซักผ้า",
+                price: 40.0,
+                category: "เครื่องซัก",
+                image: "https://img2.pic.in.th/wash.png"
+            }, {
+                id: 2,
+                name: "เครื่องซัก 2 (16kg)",
+                desc: "เครื่องซักผ้า",
+                price: 50.0,
+                category: "เครื่องซัก",
+                image: "https://img2.pic.in.th/wash.png"
+            }, {
+                id: 3,
+                name: "เครื่องซัก 3 (21kg)",
+                desc: "เครื่องซักผ้า",
+                price: 60.0,
+                category: "เครื่องซัก",
+                image: "https://img2.pic.in.th/wash.png"
+            }, {
+                id: 4,
+                name: "เครื่องซัก 4 (12kg)",
+                desc: "เครื่องซักผ้า",
+                price: 40.0,
+                category: "เครื่องซัก",
+                image: "https://img2.pic.in.th/wash.png"
+            }, {
+                id: 5,
+                name: "เครื่องซัก 5 (16kg)",
+                desc: "เครื่องซักผ้า",
+                price: 50.0,
+                category: "เครื่องซัก",
+                image: "https://img2.pic.in.th/wash.png"
+            }, {
+                id: 6,
+                name: "เครื่องซัก 6 (21kg)",
+                desc: "เครื่องซักผ้า",
+                price: 60.0,
+                category: "เครื่องซัก",
+                image: "https://img2.pic.in.th/wash.png"
+            },
+
+            // เครื่องอบ
+            {
+                id: 7,
+                name: "เครื่องอบ 1 (12kg)",
+                desc: "เครื่องอบผ้า",
+                price: 40.0,
+                category: "เครื่องอบ",
+                image: "https://img2.pic.in.th/dry.png"
+            }, {
+                id: 8,
+                name: "เครื่องอบ 2 (16kg)",
+                desc: "เครื่องอบผ้า",
+                price: 50.0,
+                category: "เครื่องอบ",
+                image: "https://img2.pic.in.th/dry.png"
+            }, {
+                id: 9,
+                name: "เครื่องอบ 3 (21kg)",
+                desc: "เครื่องอบผ้า",
+                price: 60.0,
+                category: "เครื่องอบ",
+                image: "https://img2.pic.in.th/dry.png"
+            }, {
+                id: 10,
+                name: "เครื่องอบ 4 (12kg)",
+                desc: "เครื่องอบผ้า",
+                price: 40.0,
+                category: "เครื่องอบ",
+                image: "https://img2.pic.in.th/dry.png"
+            }, {
+                id: 11,
+                name: "เครื่องอบ 5 (16kg)",
+                desc: "เครื่องอบผ้า",
+                price: 50.0,
+                category: "เครื่องอบ",
+                image: "https://img2.pic.in.th/dry.png"
+            }, {
+                id: 12,
+                name: "เครื่องอบ 6 (21kg)",
+                desc: "เครื่องอบผ้า",
+                price: 60.0,
+                category: "เครื่องอบ",
+                image: "https://img2.pic.in.th/dry.png"
+            },
+
+            // น้ำยาซักผ้า
+            {
+                id: 13,
+                name: "บรีสเอกเซล",
+                desc: "สูตรเข้มข้น อัลตร้า คลีน สีเขียว",
+                price: 5.0,
+                category: "น้ำยาซักผ้า",
+                image: "https://img1.pic.in.th/images/dent1.png"
+            }, {
+                id: 14,
+                name: "บรีส เอกเซล",
+                desc: "สูตรเข้มข้น กลิ่น พิงค์ โฟลรัล สีชมพู",
+                price: 5.0,
+                category: "น้ำยาซักผ้า",
+                image: "https://img2.pic.in.th/dent2.png"
+            }, {
+                id: 15,
+                name: "เอสเซ้นซ์ เดลี่แคร์",
+                desc: "กลิ่นฟลอรัล",
+                price: 5.0,
+                category: "น้ำยาซักผ้า",
+                image: "https://img1.pic.in.th/images/dent3.png"
+            }, {
+                id: 16,
+                name: "บรีส เอกเซล",
+                desc: "ชนิดน้ำ สูตรเข้มข้น",
+                price: 5.0,
+                category: "น้ำยาซักผ้า",
+                image: "https://img1.pic.in.th/images/dent4.png"
+            },
+
+            // น้ำยาปรับผ้านุ่ม
+            {
+                id: 17,
+                name: "ดาวน์นี่ การ์เด้นบลูม",
+                desc: "สูตรเข้มข้น",
+                price: 5.0,
+                category: "น้ำยาปรับผ้านุ่ม",
+                image: "https://img2.pic.in.th/soft1.png"
+            }, {
+                id: 18,
+                name: "ปรับผ้านุ่ม ดาวน์นี่",
+                desc: "ลาเวนเดอร์ ฝรั่งเศส ถุง ม่วง",
+                price: 5.0,
+                category: "น้ำยาปรับผ้านุ่ม",
+                image: "https://img2.pic.in.th/soft2.png"
+            }, {
+                id: 19,
+                name: "ดาวน์นี่ น้ำยาปรับผ้านุ่ม",
+                desc: "กลิ่นหอมช่อดอกไม้อันแสนสดชื่น สีฟ้า",
+                price: 5.0,
+                category: "น้ำยาปรับผ้านุ่ม",
+                image: "https://img1.pic.in.th/images/soft3.png"
+            }, {
+                id: 20,
+                name: "ดาวน์นี่ น้ำยาปรับผ้านุ่ม",
+                desc: "กลิ่น มิสทิคมิสทิค",
+                price: 5.0,
+                category: "น้ำยาปรับผ้านุ่ม",
+                image: "https://img2.pic.in.th/soft4.png"
+            },
+            // New Items
+            {
+                id: 21,
+                name: "วอทเลิฟเวอร์",
+                desc: "สูตรเข้มข้นพิเศษ",
+                price: 10.0,
+                category: "น้ำยาซักผ้า",
+                image: "https://img2.pic.in.th/washpro.png"
+            }, {
+                id: 22,
+                name: "วอทเลิฟเวอร์",
+                desc: "สูตรเข้มข้นหอมพิเศษ",
+                price: 10.0,
+                category: "น้ำยาปรับผ้านุ่ม",
+                image: "https://img1.pic.in.th/images/wash279ba87fc0c30f829.png"
+            }
+        ];
+
+        const DATA_VERSION_KEY = 'washlover_data_version';
+        const SERVICES_KEY = 'washlover_services_v2';
+        const CURRENT_DATA_VERSION = 'v1.3'; // เพิ่มเวอร์ชันของข้อมูล
+
+        let menuItems = JSON.parse(localStorage.getItem('washlover_services_v2'));
+        const storedVersion = localStorage.getItem(DATA_VERSION_KEY);
+
+        // ถ้าไม่มีข้อมูล หรือเวอร์ชันข้อมูลเก่า ให้ใช้ข้อมูลเริ่มต้นและอัปเดต localStorage
+        if (!menuItems || storedVersion !== CURRENT_DATA_VERSION) {
+            menuItems = defaultMenuItems;
+            localStorage.setItem(SERVICES_KEY, JSON.stringify(menuItems));
+            localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+        }
+
+        let cart = {};
+        let currentStep = 1;
+        let memberDiscount = 0;
+
+        let currentPin = '';
+        const CORRECT_PIN = '123456'; // ตั้งรหัสผ่านที่นี่
+        function getCategoryIcon(item) {
+            if (item.image) return item.image;
+            if (item.category === "เครื่องอบ") return "https://img2.pic.in.th/dry.png";
+            if (item.category === "น้ำยาซักผ้า") return "https://cdn-icons-png.flaticon.com/512/2917/2917993.png";
+            if (item.category === "น้ำยาปรับผ้านุ่ม") return "https://cdn-icons-png.flaticon.com/512/2555/2555012.png";
+            return "https://img2.pic.in.th/wash.png";
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initLogin();
+            initTheme();
+            updateWizardStepUI();
+        });
+
+        function initLogin() {
+            const loginState = sessionStorage.getItem("washlover_logged_in");
+            if (loginState === "true") {
+                document.getElementById('login-screen').classList.add('hidden');
+            } else {
+                document.getElementById('login-screen').classList.remove('hidden');
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            sessionStorage.setItem("washlover_logged_in", "true");
+            document.getElementById('login-screen').classList.add('hidden');
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem("washlover_logged_in");
+            location.reload();
+        }
+
+        function lockScreen() {
+            // แสดงหน้าจอ login โดยไม่ต้องออกจากระบบ
+            openLockScreenPin();
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function updateWizardStepUI() {
+            const hasCategoryInCart = (category) => Object.values(cart).some(item => item.category === category);
+
+            for (let i = 1; i <= 4; i++) {
+                const stepNum = document.getElementById(`step-num-${i}`);
+                const stepText = document.getElementById(`step-text-${i}`);
+                let categoryToCheck = '';
+                if (i === 1) categoryToCheck = 'เครื่องซัก';
+                if (i === 2) categoryToCheck = 'เครื่องอบ';
+                if (i === 3) categoryToCheck = 'น้ำยาซักผ้า';
+                if (i === 4) categoryToCheck = 'น้ำยาปรับผ้านุ่ม';
+
+                if (i === currentStep) {
+                    stepNum.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-brand-blue text-white";
+                    if (stepText) stepText.className = "text-sm font-bold text-brand-blue";
+                } else if (i < currentStep) {
+                    stepNum.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-brand-amber text-white";
+                    if (stepText) stepText.className = "text-sm font-semibold text-brand-amber";
+                    // ถ้ามีของในตะกร้าสำหรับ step นั้น ให้เป็นสีเหลือง (สำเร็จ)
+                    if (hasCategoryInCart(categoryToCheck)) {
+                        stepNum.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-brand-amber text-white";
+                        if (stepText) stepText.className = "text-sm font-semibold text-brand-amber";
+                    } else { // ถ้าไม่มี ให้เป็นสีเทา (ข้ามไป)
+                        stepNum.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-100 dark:bg-slate-800 text-gray-400";
+                        if (stepText) stepText.className = "text-sm font-semibold text-gray-400";
+                    }
+                } else {
+                    stepNum.className = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gray-100 dark:bg-slate-800 text-gray-400";
+                    if (stepText) stepText.className = "text-sm font-semibold text-gray-400";
+                }
+            }
+
+            const titleEl = document.getElementById('current-step-title');
+            const descEl = document.getElementById('current-step-desc');
+            const prevBtn = document.getElementById('prev-step-btn');
+            const nextBtnText = document.getElementById('next-btn-text');
+            const nextBtnIcon = document.getElementById('next-btn-icon');
+
+            if (currentStep === 1) {
+                titleEl.innerText = "ขั้นตอนที่ 1: เลือกเครื่องซักผ้า";
+                descEl.innerText = "กรุณาเลือกเครื่องซักผ้าที่คุณต้องการ";
+                prevBtn.disabled = true;
+                nextBtnText.innerText = "ถัดไป";
+                nextBtnIcon.className = "fa-solid fa-chevron-right ml-1";
+            } else if (currentStep === 2) {
+                titleEl.innerText = "ขั้นตอนที่ 2: เลือกเครื่องอบผ้า";
+                descEl.innerText = "กรุณาเลือกเครื่องอบผ้าหากต้องการ หรือกดปุ่มถัดไปเพื่อข้ามขั้นตอนนี้";
+                prevBtn.disabled = false;
+                nextBtnText.innerText = "ถัดไป";
+                nextBtnIcon.className = "fa-solid fa-chevron-right ml-1";
+            } else if (currentStep === 3) {
+                titleEl.innerText = "ขั้นตอนที่ 3: เลือกน้ำยาซักผ้า";
+                descEl.innerText = "สามารถเลือกน้ำยาซักผ้าเพิ่มเติมได้ไม่จำกัดจำนวนชิ้น";
+                prevBtn.disabled = false;
+                nextBtnText.innerText = "ถัดไป";
+                nextBtnIcon.className = "fa-solid fa-chevron-right ml-1";
+            } else if (currentStep === 4) {
+                titleEl.innerText = "ขั้นตอนที่ 4: เลือกน้ำยาปรับผ้านุ่ม";
+                descEl.innerText = "สามารถเลือกน้ำยาปรับผ้านุ่มเพิ่มเติมได้ไม่จำกัดจำนวนชิ้น";
+                prevBtn.disabled = false;
+                nextBtnText.innerText = "สรุปรายการ";
+                nextBtnIcon.className = "fa-solid fa-check ml-1";
+            }
+
+            renderStepProducts();
+        }
+
+        function renderStepProducts() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+
+            let targetCategory = "";
+            if (currentStep === 1) targetCategory = "เครื่องซัก";
+            if (currentStep === 2) targetCategory = "เครื่องอบ";
+            if (currentStep === 3) targetCategory = "น้ำยาซักผ้า";
+            if (currentStep === 4) targetCategory = "น้ำยาปรับผ้านุ่ม";
+
+            const filteredItems = menuItems.filter(item => item.category === targetCategory);
+
+            if (filteredItems.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400">ยังไม่มีรายการบริการในหมวดหมู่นี้</div>`;
+                return;
+            }
+
+            filteredItems.forEach(item => {
+                const card = document.createElement('div');
+                const isSelected = cart[item.id] ? true : false;
+                const currentQty = cart[item.id] ? cart[item.id].qty : 0;
+
+                const cardActiveClasses = isSelected ?
+                    "border-2 border-brand-blue bg-blue-50/10 dark:bg-brand-blue/5" :
+                    "border border-gray-100 dark:border-slate-800/60 bg-white dark:bg-slate-900";
+
+                let machineNumberHTML = '';
+                if (currentStep === 1 || currentStep === 2) {
+                    const machineNumber = filteredItems.findIndex(i => i.id === item.id) + 1;
+                    machineNumberHTML = `
+                        <div class="absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs font-bold rounded-full">${machineNumber}</div>
+                    `;
+                }
+
+                // จัดการ์ดให้เนื้อหาและปุ่มจัดเรียงสวยงาม ความสูงตามเนื้อหา ป้องกันการยืด
+                let cardClasses = `${cardActiveClasses} relative p-6 rounded-2xl flex flex-col items-center shadow-sm transition-all duration-200 w-full`;
+                if (currentStep === 1 || currentStep === 2) {
+                    card.onclick = () => selectSingleItem(item.id, item.category);
+                    cardClasses += ' cursor-pointer';
+                } else {
+                    // สำหรับขั้นตอนที่ 3 และ 4: กดที่การ์ดเพื่อเพิ่มสินค้าลงตะกร้า (ถ้ายังไม่มี)
+                    card.onclick = () => !cart[item.id] && addToCart(item.id);
+                    cardClasses += ' cursor-pointer';
+                }
+                card.className = cardClasses;
+
+                const imageUrl = getCategoryIcon(item);
+
+                let actionArea = "";
+                // ระบบปุ่ม: คลิกเพื่อเลือก (ขั้นที่ 1-2) และ เพิ่มลงตะกร้า (ขั้นที่ 3-4)
+                if (currentStep === 1 || currentStep === 2) {
+                    actionArea = `
+                        <button class="w-full py-2.5 ${isSelected ? 'bg-brand-blue text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300'} font-bold text-sm rounded-xl transition-all pointer-events-none">
+                            ${isSelected ? '<i class="fa-solid fa-check mr-1"></i> เลือกแล้ว' : 'เลือกรายการนี้'}
+                        </button>
+                    `;
+                } else {
+                    if (isSelected) {
+                        actionArea = `
+                            <div class="flex items-center justify-between w-full bg-gray-100 dark:bg-slate-800 rounded-xl p-1" onclick="event.stopPropagation()">
+                                <button onclick="changeQty(${item.id}, -1)" class="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors">
+                                    <i class="fa-solid fa-minus text-sm"></i>
+                                </button>
+                                <span class="font-bold text-sm px-1">${currentQty} ชิ้น</span>
+                                <button onclick="changeQty(${item.id}, 1)" class="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:text-brand-blue transition-colors">
+                                    <i class="fa-solid fa-plus text-sm"></i>
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        actionArea = `
+                            <button class="w-full py-2.5 bg-gray-100 dark:bg-slate-800 hover:bg-brand-blue hover:text-white text-gray-700 dark:text-gray-300 font-bold text-sm rounded-xl transition-all pointer-events-none">
+                                เพิ่มลงตะกร้า
+                            </button>
+                        `;
+                    }
+                }
+
+                card.innerHTML = `
+                    ${machineNumberHTML}
+                    <div class="h-20 w-20 flex items-center justify-center mb-4 shrink-0">
+                        <img src="${imageUrl}" alt="${item.category}" class="h-full w-full object-contain drop-shadow-sm">
+                    </div>
+                    <div class="flex flex-col items-center w-full mb-4">
+                        <div class="text-base font-bold text-gray-800 dark:text-gray-100 text-center leading-tight mb-1">${item.name}</div>
+                        <div class="text-xs font-medium text-gray-400 text-center leading-snug w-full line-clamp-2">${item.desc || item.category}</div>
+                    </div>
+                    <div class="text-lg font-bold text-brand-blue mb-4 mt-auto">฿${parseFloat(item.price).toFixed(2)}</div>
+                    <div class="w-full shrink-0">
+                        ${actionArea}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectSingleItem(id, category) {
+            // ค้นหาหมายเลขเครื่องที่ถูกต้องจากรายการสินค้าทั้งหมด
+            const itemsInCategory = menuItems.filter(item => item.category === category);
+            const itemIndex = itemsInCategory.findIndex(item => item.id === id);
+            const machineNumber = itemIndex + 1;
+
+            Object.keys(cart).forEach(key => {
+                if (cart[key].category === category) {
+                    delete cart[key];
+                }
+            });
+
+            const displayName = `${category} #${machineNumber}`;
+
+            const item = menuItems.find(i => i.id === id);
+            if (item) {
+                cart[id] = {
+                    ...item,
+                    qty: 1
+                };
+            }
+            // Override the name for display in cart
+            cart[id].displayName = displayName;
+            updateOrderDisplay();
+            renderStepProducts();
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateWizardStepUI();
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < 4) {
+                currentStep++;
+                updateWizardStepUI();
+            } else {
+                if (Object.keys(cart).length > 0) {
+                    showQRCode();
+                } else {
+                    alert("กรุณาเลือกบริการอย่างน้อย 1 รายการเพื่อดำเนินการต่อ");
+                }
+            }
+        }
+
+        function jumpToStep(step) {
+            currentStep = step;
+            updateWizardStepUI();
+        }
+
+        // ระบบคำนวณและตะกร้า
+        function addToCart(id) {
+            const item = menuItems.find(i => i.id === id);
+            if (!item) return;
+
+            if (cart[id]) {
+                cart[id].qty += 1;
+            } else {
+                cart[id] = {
+                    ...item,
+                    qty: 1
+                };
+            }
+            updateOrderDisplay();
+            renderStepProducts();
+        }
+
+        function changeQty(id, delta) {
+            if (cart[id]) {
+                // ป้องกันการเพิ่มจำนวนของเครื่องซักและเครื่องอบ
+                if ((cart[id].category === 'เครื่องซัก' || cart[id].category === 'เครื่องอบ') && delta > 0) {
+                    alert('บริการซักและอบสามารถเลือกได้เพียง 1 รายการเท่านั้น');
+                    return;
+                }
+
+                cart[id].qty += delta;
+                if (cart[id].qty <= 0) {
+                    delete cart[id];
+                }
+                updateOrderDisplay();
+                renderStepProducts();
+            }
+        }
+
+        function clearCart() {
+            cart = {};
+            memberDiscount = 0;
+            document.getElementById('member-phone').value = '';
+            updateOrderDisplay();
+            renderStepProducts();
+        }
+
+        function updateOrderDisplay() {
+            const container = document.getElementById('cart-container');
+            container.innerHTML = '';
+            let subtotal = 0;
+            let totalItems = 0;
+
+            Object.values(cart).forEach(item => {
+                const totalItemPrice = item.price * item.qty;
+                subtotal += totalItemPrice;
+                totalItems += item.qty;
+
+                const imageUrl = getCategoryIcon(item);
+
+                // ใช้ displayName ที่เก็บไว้ ถ้าไม่มีให้ใช้ชื่อเดิม
+                // สำหรับเครื่องซัก/อบ จะมี displayName เสมอ
+                const displayNameInCart = item.displayName || item.name;
+
+                let quantityControlsHTML = `
+                    <div class="flex items-center bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg">
+                        <button onclick="changeQty(${item.id}, -1)" class="px-1.5 py-1 text-gray-500 hover:text-red-500"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                        <span class="px-1.5 text-xs font-bold min-w-[18px] text-center text-gray-700 dark:text-gray-300">${item.qty}</span>
+                        <button onclick="changeQty(${item.id}, 1)" class="px-1.5 py-1 text-gray-500 hover:text-brand-blue"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                    </div>
+                `;
+
+                // ซ่อนปุ่มเพิ่ม/ลดจำนวนสำหรับเครื่องซักและเครื่องอบ
+                if (item.category === 'เครื่องซัก' || item.category === 'เครื่องอบ') {
+                    quantityControlsHTML = `<span class="px-1.5 text-xs font-bold min-w-[18px] text-center text-gray-700 dark:text-gray-300">x${item.qty}</span>`;
+                }
+
+                const row = document.createElement('div');
+                row.className = "bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl flex items-center justify-between border border-gray-100 dark:border-slate-800";
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3 max-w-[55%]">
+                        <div class="w-10 h-10 bg-white dark:bg-slate-900 rounded-lg p-1.5 border border-gray-100 dark:border-slate-800/80 flex-shrink-0 flex items-center justify-center">
+                            <img src="${imageUrl}" alt="${item.category}" class="h-full w-full object-contain">
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <span class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">${displayNameInCart}</span>
+                            <span class="text-[11px] text-gray-400">฿${parseFloat(item.price).toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        ${quantityControlsHTML}
+                        <span class="text-xs font-bold text-brand-blue w-14 text-right">฿${totalItemPrice.toFixed(2)}</span>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            // คำนวณยอดรวม, ส่วนลด, และภาษี
+            const discountAmount = subtotal * memberDiscount;
+            const subtotalAfterDiscount = subtotal - discountAmount;
+            const tax = subtotalAfterDiscount * 0.05;
+            const total = subtotalAfterDiscount + tax;
+
+            document.getElementById('subtotal').innerText = `฿${subtotal.toFixed(2)}`;
+            document.getElementById('tax').innerText = `฿${tax.toFixed(2)}`;
+
+            const discountRow = document.getElementById('discount-row');
+            if (discountAmount > 0) {
+                document.getElementById('discount-amount').innerText = `-฿${discountAmount.toFixed(2)}`;
+                discountRow.classList.remove('hidden');
+                discountRow.classList.add('flex');
+            } else {
+                discountRow.classList.add('hidden');
+            }
+
+            const checkoutBtn = document.getElementById('checkout-btn');
+            checkoutBtn.innerText = `ยืนยันส่งซัก ฿${total.toFixed(2)}`;
+            checkoutBtn.disabled = subtotal <= 0;
+
+            const badge = document.getElementById('cart-badge');
+            const cartCountElement = document.getElementById('cart-count');
+
+            cartCountElement.innerText = totalItems;
+            if (totalItems > 0) {
+                badge.innerText = totalItems;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function handleMemberInput(input) {
+            // รับเฉพาะตัวเลข
+            input.value = input.value.replace(/[^0-9]/g, '');
+
+            // ตรวจสอบและใช้ส่วนลดอัตโนมัติ
+            applyMemberDiscount();
+        }
+
+        function applyMemberDiscount() {
+            const phoneInput = document.getElementById('member-phone');
+            if (phoneInput.value.trim().length === 10) {
+                memberDiscount = 0.10; // ส่วนลด 10%
+            } else {
+                memberDiscount = 0;
+            }
+            updateOrderDisplay();
+        }
+
+        function switchPage(pageName) {
+            const menuMap = {
+                'หน้าแรก': 'menu-home',
+                'จัดการบริการ': 'menu-manage',
+                'ประวัติส่งซัก': 'menu-history',
+                'ตั้งค่า': 'menu-setting'
+            };
+
+            Object.values(menuMap).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.classList.remove('active-sidebar');
+            });
+
+            const activeBtn = document.getElementById(menuMap[pageName]);
+            if (activeBtn) activeBtn.classList.add('active-sidebar');
+
+            document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-manage').classList.add('hidden');
+            document.getElementById('page-dynamic').classList.add('hidden');
+            document.getElementById('page-history').classList.add('hidden');
+            document.getElementById('page-setting').classList.add('hidden');
+
+            if (pageName === 'หน้าแรก') {
+                document.getElementById('page-home').classList.remove('hidden');
+                updateWizardStepUI();
+            } else if (pageName === 'ประวัติส่งซัก') {
+                document.getElementById('page-history').classList.remove('hidden');
+                renderHistory();
+            } else {
+                document.getElementById('page-dynamic').classList.remove('hidden');
+                document.getElementById('dynamic-title').innerText = `กำลังพัฒนาหน้า: ${pageName}`;
+            }
+
+            closeSidebarMobile();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        }
+
+        function closeSidebarMobile() {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.add('hidden');
+        }
+
+        function toggleCartMobile() {
+            document.getElementById('cart-sidebar').classList.toggle('translate-x-full');
+            document.getElementById('cart-overlay').classList.toggle('hidden');
+        }
+
+        function showReceipt() {
+            const subtotal = Object.values(cart).reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const discountAmount = subtotal * memberDiscount;
+            const subtotalAfterDiscount = subtotal - discountAmount;
+            const tax = subtotalAfterDiscount * 0.05;
+            const total = subtotalAfterDiscount + tax;
+
+            // Load shop settings for receipt
+            // This part is duplicated in showReceiptForOrder, can be refactored later.
+            const shopSettings = JSON.parse(localStorage.getItem('washlover_shop_settings')) || {
+                name: 'Washlover',
+                address: '',
+                phone: '',
+                receiptType: 'summary'
+            };
+            document.getElementById('receipt-shop-name').innerText = shopSettings.name;
+            document.getElementById('receipt-shop-address').innerText = shopSettings.address;
+            document.getElementById('receipt-shop-phone').innerText = shopSettings.phone;
+            document.getElementById('receipt-title').innerText = shopSettings.receiptType === 'tax_invoice' ?
+                'ใบกำกับภาษีอย่างย่อ' :
+                'ใบสรุปรายการ';
+
+            // Populate header
+            document.getElementById('receipt-date').innerText = new Date().toLocaleString('th-TH', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+            document.getElementById('receipt-order-id').innerText = `Order ID: #${Date.now().toString().slice(-6)}`;
+
+            // Populate items
+            const itemsBody = document.getElementById('receipt-items-body');
+            itemsBody.innerHTML = '';
+            Object.values(cart).forEach(item => { // Use cart for current order
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-1.5 align-top">
+                        <div>${item.name}</div>
+                        <div class="text-xs text-gray-400">(${item.category})</div>
+                    </td>
+                    <td class="text-center py-1.5 align-top">x${item.qty}</td>
+                    <td class="text-right py-1.5 font-semibold align-top">฿${(item.price * item.qty).toFixed(2)}</td>
+                `;
+                itemsBody.appendChild(tr);
+            });
+
+            // Populate summary
+            document.getElementById('receipt-subtotal').innerText = `฿${subtotal.toFixed(2)}`;
+            document.getElementById('receipt-tax').innerText = `฿${tax.toFixed(2)}`;
+            document.getElementById('receipt-total').innerText = `฿${total.toFixed(2)}`;
+
+            const receiptDiscountRow = document.getElementById('receipt-discount-row');
+            if (discountAmount > 0) {
+                document.getElementById('receipt-discount').innerText = `-฿${discountAmount.toFixed(2)}`;
+                receiptDiscountRow.classList.remove('hidden');
+                receiptDiscountRow.classList.add('flex');
+            } else {
+                receiptDiscountRow.classList.add('hidden');
+            }
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        function printAndProceed() {
+            const printContents = document.getElementById('receipt-modal').querySelector('.bg-white').innerHTML;
+            const originalContents = document.body.innerHTML;
+            document.body.innerHTML = `<div class="p-4">${printContents}</div>`;
+            document.body.querySelector('.mt-6.space-y-2').remove();
+            window.print();
+            document.body.innerHTML = originalContents;
+            showQRCode(); // Proceed to QR code after printing
+        }
+
+        function showQRCode() {
+            let subtotal = Object.values(cart).reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let subtotalAfterDiscount = subtotal * (1 - memberDiscount);
+            let total = subtotalAfterDiscount * 1.05;
+
+            closeReceiptModal(); // Close receipt modal if it's open
+            document.getElementById('modal-total').innerText = `฿${total.toFixed(2)}`;
+            document.getElementById('qrcode-modal').classList.remove('hidden');
+        }
+
+        function closeModalAndClear() {
+            // --- Save Order to History ---
+            let orders = JSON.parse(localStorage.getItem('washlover_orders')) || [];
+            const subtotal = Object.values(cart).reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const discountAmount = subtotal * memberDiscount;
+            const subtotalAfterDiscount = subtotal - discountAmount;
+            const tax = subtotalAfterDiscount * 0.05;
+            const total = subtotalAfterDiscount + tax;
+
+            const newOrder = {
+                id: `ORD-${Date.now()}`,
+                date: new Date().toISOString(),
+                items: Object.values(cart),
+                subtotal: subtotal,
+                discountAmount: discountAmount,
+                tax: tax,
+                total: total,
+                memberPhone: document.getElementById('member-phone').value
+            };
+            orders.unshift(newOrder); // Add to the beginning of the array
+            localStorage.setItem('washlover_orders', JSON.stringify(orders));
+
+            document.getElementById('qrcode-modal').classList.add('hidden');
+            clearCart();
+            currentStep = 1;
+            updateWizardStepUI();
+            document.getElementById('cart-sidebar').classList.add('translate-x-full');
+            document.getElementById('cart-overlay').classList.add('hidden');
+        }
+
+        // --- History Page Logic ---
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            const orders = JSON.parse(localStorage.getItem('washlover_orders')) || [];
+            container.innerHTML = '';
+
+            if (orders.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400">ยังไม่มีประวัติการส่งซัก</div>`;
+                return;
+            }
+
+            orders.forEach(order => {
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col";
+
+                const itemsSummary = order.items.map(item => `${item.name} (x${item.qty})`).join(', ');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <div class="font-bold text-brand-blue">${order.id}</div>
+                            <div class="text-xs text-gray-400">${new Date(order.date).toLocaleString('th-TH')}</div>
+                        </div>
+                        <div class="text-lg font-bold text-right">฿${order.total.toFixed(2)}</div>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 flex-1 mb-4">
+                        ${itemsSummary}
+                    </p>
+                    <button onclick="showReceiptForOrder('${order.id}')" class="w-full mt-auto bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 py-2 rounded-xl font-bold text-sm hover:bg-gray-200 dark:hover:bg-slate-700">
+                        ดูรายละเอียด
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function showReceiptForOrder(orderId) {
+            const orders = JSON.parse(localStorage.getItem('washlover_orders')) || [];
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            // This is a simplified version of showReceipt(), using order data instead of cart data.
+            const shopSettings = JSON.parse(localStorage.getItem('washlover_shop_settings')) || {
+                name: 'Washlover',
+                address: '',
+                phone: '',
+                receiptType: 'summary'
+            };
+            document.getElementById('receipt-shop-name').innerText = shopSettings.name;
+            document.getElementById('receipt-shop-address').innerText = shopSettings.address;
+            document.getElementById('receipt-shop-phone').innerText = shopSettings.phone;
+            document.getElementById('receipt-title').innerText = shopSettings.receiptType === 'tax_invoice' ? 'ใบกำกับภาษีอย่างย่อ' : 'ใบสรุปรายการ';
+            document.getElementById('receipt-date').innerText = new Date(order.date).toLocaleString('th-TH', {
+                dateStyle: 'short',
+                timeStyle: 'short'
+            });
+            document.getElementById('receipt-order-id').innerText = `Order ID: ${order.id.replace('ORD-', '')}`;
+
+            const itemsBody = document.getElementById('receipt-items-body');
+            itemsBody.innerHTML = order.items.map(item => `
+                <tr>
+                    <td class="py-1.5 align-top"><div>${item.name}</div><div class="text-xs text-gray-400">(${item.category})</div></td>
+                    <td class="text-center py-1.5 align-top">x${item.qty}</td>
+                    <td class="text-right py-1.5 font-semibold align-top">฿${(item.price * item.qty).toFixed(2)}</td>
+                </tr>`).join('');
+
+            document.getElementById('receipt-subtotal').innerText = `฿${order.subtotal.toFixed(2)}`;
+            document.getElementById('receipt-tax').innerText = `฿${order.tax.toFixed(2)}`;
+            document.getElementById('receipt-total').innerText = `฿${order.total.toFixed(2)}`;
+            document.getElementById('receipt-discount-row').style.display = order.discountAmount > 0 ? 'flex' : 'none';
+            document.getElementById('receipt-discount').innerText = `-฿${order.discountAmount.toFixed(2)}`;
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        // --- PIN Modal Logic ---
+        function openPinModal() {
+            currentPin = '';
+            document.getElementById('pin-error-msg').innerText = '';
+            renderPinDisplay();
+            document.getElementById('pin-modal').classList.remove('hidden');
+            // The pin pad is now hardcoded in HTML, so we don't need to render it.
+            // If you want to randomize it again, we can re-add the renderPinPad() call.
+        }
+
+        function closePinModal() {
+            document.getElementById('pin-modal').classList.add('hidden');
+            currentPin = '';
+        }
+
+        function renderPinDisplay() {
+            const display = document.getElementById('pin-display');
+            display.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'w-5 h-5 rounded-full border-2 border-gray-300 dark:border-slate-600';
+                if (i < currentPin.length) {
+                    dot.classList.add('bg-brand-blue', 'border-brand-blue');
+                }
+                display.appendChild(dot);
+            }
+        }
+
+        function handlePinInput(key) {
+            document.getElementById('pin-error-msg').innerText = '';
+
+            if (key === 'backspace') {
+                currentPin = currentPin.slice(0, -1);
+            } else if (key === 'clear') {
+                currentPin = '';
+            } else if (currentPin.length < 6) {
+                currentPin += key;
+            }
+
+            renderPinDisplay();
+
+            if (currentPin.length === 6) {
+                setTimeout(verifyPin, 200);
+            }
+        }
+
+        function verifyPin() {
+            // ยอมรับรหัส 6 หลักใดๆ ก็ได้
+            closePinModal();
+            showReceipt(); // ดำเนินการต่อ
+        }
+
+        // --- Screen Lock PIN Modal Logic ---
+        let currentLockPin = '';
+        const CORRECT_LOCK_PIN = '123456'; // รหัสปลดล็อกหน้าจอ (6 หลัก)
+        let clockInterval = null;
+
+        function openLockScreenPin() {
+            currentLockPin = '';
+            document.getElementById('lock-pin-error-msg').innerText = '';
+
+            // Show cover first, hide PIN entry
+            document.getElementById('lock-screen-cover').classList.remove('hidden');
+            document.getElementById('lock-screen-pin-entry').classList.add('hidden');
+            document.getElementById('lock-screen-dim-overlay').classList.add('hidden');
+            document.getElementById('lock-screen-pin-entry').classList.remove('flex');
+
+            // Start clock
+            updateClock();
+            clockInterval = setInterval(updateClock, 1000);
+
+            document.getElementById('screen-lock-modal').classList.remove('hidden');
+        }
+
+        function hidePinEntryAndShowCover() {
+            // Reset PIN state
+            currentLockPin = '';
+            document.getElementById('lock-pin-error-msg').innerText = '';
+
+            // Hide PIN entry, show cover
+            document.getElementById('lock-screen-pin-entry').classList.add('hidden');
+            document.getElementById('lock-screen-pin-entry').classList.remove('flex');
+            document.getElementById('lock-screen-cover').classList.remove('hidden');
+            document.getElementById('lock-screen-dim-overlay').classList.add('hidden');
+        }
+
+        function showPinEntry() {
+            // Hide cover, show PIN entry
+            document.getElementById('lock-screen-cover').classList.add('hidden');
+            document.getElementById('lock-screen-pin-entry').classList.remove('hidden');
+            document.getElementById('lock-screen-pin-entry').classList.add('flex');
+            document.getElementById('lock-screen-dim-overlay').classList.remove('hidden');
+
+            // Prepare PIN pad
+            renderLockPinDisplay();
+            renderLockPinPad();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('lock-screen-time').innerText = now.toLocaleTimeString('th-TH', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('lock-screen-date').innerText = now.toLocaleDateString('th-TH', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function closeLockScreenPin() {
+            clearInterval(clockInterval); // Stop the clock
+            document.getElementById('screen-lock-modal').classList.add('hidden');
+            currentLockPin = '';
+        }
+
+        function renderLockPinPad() {
+            const container = document.getElementById('lock-pin-pad-container');
+            container.innerHTML = '';
+            let numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+            // Randomize numbers for security
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+            for (let i = 0; i < 9; i++) {
+                container.innerHTML += `<button onclick="handleLockPinInput('${numbers[i]}')" class="pin-key">${numbers[i]}</button>`;
+            }
+            // สร้างปุ่มแถวล่าง (ล้าง, ตัวเลขสุดท้าย, ลบ)
+            container.innerHTML += `
+                <button onclick="handleLockPinInput('clear')" class="pin-key text-sm font-bold text-amber-600 dark:text-amber-500">ล้าง</button>
+                <button onclick="handleLockPinInput('${numbers[9]}')" class="pin-key">${numbers[9]}</button>
+                <button onclick="handleLockPinInput('backspace')" class="pin-key text-red-500"><i class="fa-solid fa-delete-left"></i></button>
+            `;
+        }
+
+        function renderLockPinDisplay() {
+            const display = document.getElementById('lock-pin-display');
+            display.innerHTML = '';
+            for (let i = 0; i < 6; i++) { // 6-digit PIN
+                const dot = document.createElement('div');
+                dot.className = 'w-5 h-5 rounded-full border-2 border-gray-300 dark:border-slate-600';
+                if (i < currentLockPin.length) {
+                    dot.classList.add('bg-red-500', 'border-red-500');
+                }
+                display.appendChild(dot);
+            }
+        }
+
+        function handleLockPinInput(key) {
+            document.getElementById('lock-pin-error-msg').innerText = '';
+            if (key === 'backspace') {
+                currentLockPin = currentLockPin.slice(0, -1);
+            } else if (key === 'clear') {
+                currentLockPin = '';
+            } else if (currentLockPin.length < 6) {
+                currentLockPin += key;
+            }
+            renderLockPinDisplay();
+            if (currentLockPin.length === 6) {
+                setTimeout(verifyLockPin, 200);
+            }
+        }
+
+        function verifyLockPin() {
+            // ยอมรับรหัส 6 หลักใดๆ ก็ได้เพื่อปลดล็อก
+            if (currentLockPin.length === 6) {
+                closeLockScreenPin();
+            }
+        }
+
+        // --- Universal On-Screen Keyboard Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const keyboard = new OnScreenKeyboard();
+            keyboard.init();
+        });
+
+        class OnScreenKeyboard {
+            constructor() {
+                this.activeInput = null;
+                this.capsLock = false;
+                this.shift = false;
+                this.currentLayout = 'text_th';
+                this.layouts = {
+                    text_en: [
+                        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+                        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+                        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+                        ['shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'backspace'],
+                        ['lang', 'space', 'ok']
+                    ],
+                    text_en_shift: [
+                        ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
+                        ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+                        ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+                        ['shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'backspace'],
+                        ['lang', 'space', 'ok']
+                    ],
+                    text_th: [
+                        ['ๅ', '/', '-', 'ภ', 'ถ', 'ุ', 'ึ', 'ค', 'ต', 'จ', 'ข', 'ช'],
+                        ['ๆ', 'ไ', 'ำ', 'พ', 'ะ', 'ั', 'ี', 'ร', 'น', 'ย', 'บ', 'ล', 'ฃ'],
+                        ['shift', 'ผ', 'ป', 'แ', 'อ', 'ิ', 'ื', 'ท', 'ม', 'ใ', 'ฝ', 'backspace'],
+                        ['lang', 'space', 'ok']
+                    ],
+                    text_th_shift: [
+                        ['+', '๑', '๒', '๓', '๔', 'ู', '฿', '๕', '๖', '๗', '๘', '๙', '๐', '"', 'ฎ', 'ฑ', 'ธ', 'ํ', '๊', 'ณ'],
+                        ['ฯ', 'ญ', 'ฐ', ',', 'ฅ', 'ฤ', 'ฆ', 'ฏ', 'โ', 'ฌ', '็', '๋', 'ษ', 'ศ', 'ซ', '.'],
+                        ['shift', '(', ')', 'ฉ', 'ฮ', 'ฺ', '์', '?', 'ฒ', 'ฬ', 'ภ', 'backspace'],
+                        ['lang', 'space', 'ok']
+                    ],
+                    numeric: [
+                        ['1', '2', '3'],
+                        ['4', '5', '6'],
+                        ['7', '8', '9'],
+                        ['clear', '0', '.', 'backspace'],
+                        ['hide', 'ok']
+                    ],
+                    tel: [
+                        ['1', '2', '3'],
+                        ['4', '5', '6'],
+                        ['7', '8', '9'],
+                        ['hide', '0', 'backspace'],
+                        ['ok']
+                    ]
+                };
+            }
+
+            init() {
+                this.overlay = document.getElementById('kb-overlay');
+                this.display = document.getElementById('kb-display');
+                this.layoutContainer = document.getElementById('kb-layout-container');
+
+                document.querySelectorAll('input[readonly], textarea[readonly]').forEach(input => {
+                    input.addEventListener('click', (e) => {
+                        this.activeInput = e.target;
+                        this.show();
+                    });
+                });
+            }
+
+            show() {
+                if (!this.activeInput) return;
+                this.display.textContent = this.activeInput.value;
+                this.overlay.classList.add('visible');
+
+                let layoutType = 'text_th';
+                const inputType = this.activeInput.type;
+                if (inputType === 'number' || this.activeInput.inputmode === 'decimal') layoutType = 'numeric';
+                if (inputType === 'tel') layoutType = 'tel';
+                if (inputType === 'email' || inputType === 'url') layoutType = 'text_en';
+
+                this.renderLayout(layoutType);
+            }
+
+            hide() {
+                this.overlay.classList.remove('visible');
+                this.activeInput = null;
+            }
+
+            renderLayout(layoutName) {
+                this.currentLayout = layoutName;
+                let finalLayoutName = layoutName;
+                if (this.shift && (layoutName === 'text_en' || layoutName === 'text_th')) {
+                    finalLayoutName = `${layoutName}_shift`;
+                }
+
+                const layout = this.layouts[finalLayoutName] || this.layouts[layoutName];
+                if (!layout) return;
+
+                this.layoutContainer.innerHTML = '';
+                const layoutFragment = document.createDocumentFragment();
+                const kbLayoutDiv = document.createElement('div');
+                kbLayoutDiv.className = 'kb-layout';
+
+                layout.forEach(row => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'kb-row';
+                    row.forEach(key => {
+                        const keyBtn = this.createKey(key);
+                        rowDiv.appendChild(keyBtn);
+                    });
+                    kbLayoutDiv.appendChild(rowDiv);
+                });
+                layoutFragment.appendChild(kbLayoutDiv);
+                this.layoutContainer.appendChild(layoutFragment);
+            }
+
+            createKey(key) {
+                const keyBtn = document.createElement('button');
+                keyBtn.className = 'kb-key';
+                keyBtn.setAttribute('type', 'button');
+                let keyContent = key;
+
+                switch (key) {
+                    case 'backspace':
+                        keyContent = '<i class="fa-solid fa-delete-left"></i>';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.updateValue(this.display.textContent.slice(0, -1));
+                        break;
+                    case 'shift':
+                        keyContent = '<i class="fa-solid fa-arrow-up"></i>';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => {
+                            this.shift = !this.shift;
+                            this.renderLayout(this.currentLayout);
+                        };
+                        if (this.shift) keyBtn.classList.add('primary');
+                        break;
+                    case 'space':
+                        keyContent = '<i class="fa-solid fa-keyboard"></i>';
+                        keyBtn.onclick = () => this.updateValue(this.display.textContent + ' ');
+                        break;
+                    case 'ok':
+                        keyContent = 'OK';
+                        keyBtn.classList.add('action', 'primary');
+                        keyBtn.onclick = () => {
+                            this.activeInput.dispatchEvent(new Event('input', {
+                                bubbles: true
+                            }));
+                            this.hide();
+                        };
+                        break;
+                    case 'hide':
+                        keyContent = 'ซ่อน';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.hide();
+                        break;
+                    case 'clear':
+                        keyContent = 'C';
+                        keyBtn.classList.add('action', 'danger');
+                        keyBtn.onclick = () => this.updateValue('');
+                        break;
+                    case 'lang':
+                        keyContent = this.currentLayout === 'text_th' ? 'EN' : 'ไทย';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.renderLayout(this.currentLayout === 'text_th' ? 'text_en' : 'text_th');
+                        break;
+                    default:
+                        keyBtn.onclick = () => {
+                            this.updateValue(this.display.textContent + key);
+                            if (this.shift) {
+                                this.shift = false;
+                            }
+                            this.renderLayout(this.currentLayout);
+                        };
+                        break;
+                }
+                keyBtn.innerHTML = keyContent;
+                keyBtn.dataset.key = key;
+                return keyBtn;
+            }
+
+            updateValue(newValue) {
+                if (this.activeInput) {
+                    const maxLength = this.activeInput.maxLength;
+                    if (maxLength && maxLength > 0 && newValue.length > maxLength) {
+                        newValue = newValue.substring(0, maxLength);
+                    }
+                    this.activeInput.value = newValue;
+                    this.display.textContent = newValue;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

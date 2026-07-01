@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="th" class="">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Laundry Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#35A4E5',
+                            darkBlue: '#1A237E',
+                            amber: '#FFB300'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Prompt', 'Helvetica Neue', sans-serif;
+        }
+        
+         ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+         ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+         ::-webkit-scrollbar-thumb {
+            background: #CCCCCC;
+            border-radius: 10px;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #4B5563;
+        }
+        
+        .active-sidebar {
+            background-color: #35A4E5 !important;
+            color: white !important;
+        }
+        /* --- Universal On-Screen Keyboard Styles --- */
+        
+        .kb-overlay {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background-color: rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: flex-end;
+        }
+        
+        .kb-overlay.visible {
+            display: flex;
+        }
+        
+        .kb-container {
+            width: 100%;
+            background-color: #d1d5db;
+            /* bg-gray-300 */
+            padding: 8px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .dark .kb-container {
+            background-color: #1f2937;
+            /* dark:bg-gray-800 */
+        }
+        
+        .kb-display {
+            width: 100%;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            min-height: 44px;
+            font-size: 1.125rem;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .dark .kb-display {
+            background-color: #374151;
+            /* dark:bg-gray-600 */
+            color: #ffffff;
+            border-color: #4b5563;
+        }
+        
+        .kb-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .kb-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .kb-key {
+            height: 48px;
+            flex-grow: 1;
+            flex-basis: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            background-color: #f9fafb;
+            /* bg-gray-50 */
+            color: #111827;
+            /* text-gray-900 */
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.1s;
+        }
+        
+        .dark .kb-key {
+            background-color: #4b5563;
+            /* dark:bg-gray-500 */
+            color: #ffffff;
+        }
+        
+        .kb-key:active {
+            background-color: #9ca3af;
+            /* bg-gray-400 */
+        }
+        
+        .kb-key.action {
+            background-color: #d1d5db;
+            /* bg-gray-300 */
+        }
+        
+        .dark .kb-key.action {
+            background-color: #374151;
+            /* dark:bg-gray-600 */
+        }
+        
+        .kb-key.primary {
+            background-color: #35A4E5;
+            color: white;
+        }
+        
+        .kb-key.danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .kb-key[data-key="space"] {
+            flex-grow: 5;
+        }
+        
+        .kb-key[data-key="shift"] i,
+        .kb-key[data-key="backspace"] i {
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-slate-950 text-gray-800 dark:text-gray-100 transition-colors duration-200 pb-[320px] lg:pb-0">
+
+    <!-- 1. หน้าจอเข้าสู่ระบบ (Login Screen Overlay) -->
+    <div id="admin-login-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-950 p-4 transition-all duration-300">
+        <div class="absolute top-4 right-4">
+            <button onclick="toggleTheme()" class="p-3 bg-white dark:bg-slate-900 rounded-full shadow-md text-gray-600 dark:text-gray-300">
+                <i class="fa-solid fa-moon dark:hidden text-lg"></i>
+                <i class="fa-solid fa-sun hidden dark:block text-lg text-brand-amber"></i>
+            </button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-800 text-center">
+            <i class="fa-solid fa-user-shield text-5xl text-brand-blue mb-4"></i>
+            <h2 class="text-2xl font-bold mb-1">สำหรับผู้ดูแลระบบ</h2>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mb-6">กรุณาเข้าสู่ระบบเพื่อเข้าถึงส่วนจัดการ</p>
+
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">ชื่อผู้ใช้งาน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </span>
+                        <input type="text" id="admin-username" required value="admin" inputmode="none" readonly class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">รหัสผ่าน</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </span>
+                        <input type="password" id="admin-password" required value="admin1234" inputmode="none" readonly class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-brand-blue hover:bg-opacity-90 text-white rounded-xl font-bold text-base shadow-md transition-all mt-2">
+                    เข้าสู่ระบบ
+                </button>
+            </form>
+            <a href="index.html" class="inline-block mt-6 text-xs text-gray-400 hover:text-brand-blue">กลับไปที่หน้าร้าน</a>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay for Mobile -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/50 z-40 transition-opacity lg:hidden"></div>
+
+    <!-- Main Admin Layout (Hidden by default) -->
+    <div id="admin-layout" class="hidden h-screen w-full flex flex-col lg:flex-row">
+        <!-- Mobile Header -->
+        <header class="lg:hidden flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 z-30 shadow-sm">
+            <button onclick="toggleSidebar()" class="text-gray-600 dark:text-gray-300 p-2 focus:outline-none">
+                <i class="fa-solid fa-bars text-xl"></i>
+            </button>
+            <h1 id="mobile-page-title" class="text-lg font-bold text-gray-800 dark:text-gray-200">แดชบอร์ด</h1>
+            <div class="w-10"></div>
+            <!-- Spacer -->
+        </header>
+
+        <!-- Sidebar Drawer -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-900 h-full flex flex-col justify-between p-5 border-r border-gray-100 dark:border-slate-800 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 lg:static lg:z-auto">
+            <div class="relative">
+                <div class="flex items-center justify-center mb-6 mt-2 lg:my-6 relative">
+                    <img src="https://img1.pic.in.th/images/logo456088f73b0d57f4.png" alt="Logo" class="h-16 lg:h-24 w-auto object-contain mx-auto">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-500 dark:text-gray-400 p-2 absolute -right-2 top-1/2 -translate-y-1/2">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+                <nav class="space-y-1">
+                    <button onclick="switchPage('แดชบอร์ด')" id="menu-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800"><i class="fa-solid fa-chart-pie w-5 text-center"></i><span>แดชบอร์ด</span></button>
+                    <button onclick="switchPage('จัดการบริการ')" id="menu-manage" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800"><i class="fa-solid fa-sliders w-5 text-center"></i><span>จัดการบริการ</span></button>
+                    <button onclick="switchPage('ตั้งค่าร้านค้า')" id="menu-shop-settings" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800"><i class="fa-solid fa-shop w-5 text-center"></i><span>ตั้งค่าร้านค้า</span></button>
+                    <button onclick="switchPage('ตั้งค่า Printer')" id="menu-printer" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800"><i class="fa-solid fa-print w-5 text-center"></i><span>ตั้งค่า Printer</span></button>
+                </nav>
+            </div>
+            <div class="space-y-2">
+                <a href="index.html" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-gray-100 dark:hover:bg-slate-800">
+                    <i class="fa-solid fa-store w-5 text-center"></i>
+                    <span>กลับไปหน้าร้าน</span>
+                </a>
+                <button onclick="handleAdminLogout()" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500">
+                    <i class="fa-solid fa-right-from-bracket w-5 text-center"></i>
+                    <span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col p-4 lg:p-8 overflow-y-auto w-full">
+            <!-- Page: Dashboard -->
+            <section id="page-dashboard" class="hidden flex-col h-full">
+                <h1 class="text-2xl lg:text-3xl font-bold mb-6">แดชบอร์ด</h1>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+                    <!-- Card 1: ยอดขายวันนี้ -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-500 text-xl">
+                            <i class="fa-solid fa-baht-sign"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">ยอดขายวันนี้</p>
+                            <p class="text-2xl font-bold">฿1,250.00</p>
+                        </div>
+                    </div>
+                    <!-- Card 2: ออเดอร์วันนี้ -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-sky-100 dark:bg-sky-500/20 rounded-full flex items-center justify-center text-sky-500 text-xl">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">ออเดอร์วันนี้</p>
+                            <p class="text-2xl font-bold">25</p>
+                        </div>
+                    </div>
+                    <!-- Card 3: สมาชิกใหม่ -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-amber-100 dark:bg-amber-500/20 rounded-full flex items-center justify-center text-amber-500 text-xl">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">สมาชิกใหม่ (วันนี้)</p>
+                            <p class="text-2xl font-bold">3</p>
+                        </div>
+                    </div>
+                    <!-- Card 4: บริการยอดนิยม -->
+                    <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 rounded-full flex items-center justify-center text-indigo-500 text-xl">
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400">บริการยอดนิยม</p>
+                            <p class="text-lg font-bold truncate">ซัก 16 kg.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities -->
+                <h2 class="text-lg font-bold mb-4">รายการล่าสุด</h2>
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-4">
+                    <p class="text-center text-gray-400 py-8">ยังไม่มีข้อมูลรายการล่าสุด (ส่วนนี้กำลังพัฒนา)</p>
+                </div>
+            </section>
+
+            <!-- Page: จัดการบริการ (CRUD) -->
+            <section id="page-manage" class="hidden flex-col h-full">
+                <div class="flex items-center justify-between mb-6">
+                    <h1 class="text-2xl lg:text-3xl font-bold">จัดการบริการทั้งหมด</h1>
+                    <button onclick="openServiceModal()" class="bg-brand-blue text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md hover:bg-opacity-90 flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="hidden sm:inline">เพิ่มบริการใหม่</span>
+                    </button>
+                </div>
+
+                <!-- Category Filter Tabs -->
+                <div class="mb-4 border-b border-gray-200 dark:border-slate-700">
+                    <nav id="category-filter-tabs" class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+                        <!-- Tabs will be generated by JS -->
+                    </nav>
+                </div>
+
+                <div id="service-tables-container" class="space-y-8 overflow-y-auto flex-1 pr-2 pb-4">
+                    <!-- Service tables will be generated here -->
+                </div>
+            </section>
+
+            <!-- Dynamic Page Container (Placeholder) -->
+            <section id="page-dynamic" class="hidden flex-1 flex flex-col items-center justify-center text-center p-6">
+                <div class="text-6xl text-gray-300 dark:text-slate-700 mb-4">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+                <h1 id="dynamic-title" class="text-xl lg:text-2xl font-bold text-gray-700 dark:text-gray-300">กำลังพัฒนาหน้า</h1>
+                <p class="text-sm text-gray-400 mt-2">หน้านี้กำลังอยู่ระหว่างการพัฒนา กรุณากลับมาลองใหม่อีกครั้งภายหลัง</p>
+            </section>
+            <!-- Page: Printer Settings -->
+            <section id="page-printer-settings" class="hidden flex-col h-full">
+                <h1 class="text-2xl lg:text-3xl font-bold mb-6">ตั้งค่าเครื่องพิมพ์ (Printer)</h1>
+
+                <div class="max-w-4xl mx-auto w-full space-y-8">
+                    <!-- USB Printer Card -->
+                    <div class="bg-white dark:bg-slate-900 p-6 lg:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="w-12 h-12 bg-sky-100 dark:bg-sky-500/20 rounded-full flex items-center justify-center text-sky-500 text-2xl">
+                                <i class="fa-brands fa-usb"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold">เครื่องพิมพ์ USB</h2>
+                                <p class="text-sm text-gray-400">เชื่อมต่อผ่านสาย USB โดยตรง (แนะนำ)</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
+                                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">สถานะ: <span id="usb-printer-status" class="font-bold text-red-500">ยังไม่ได้เชื่อมต่อ</span></span>
+                            </div>
+                            <button onclick="connectUSBPrinter()" class="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold text-sm shadow-md transition-colors">
+                                <i class="fa-solid fa-search mr-2"></i> ค้นหาและเชื่อมต่อเครื่องพิมพ์ USB
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bluetooth Printer Card -->
+                    <div class="bg-white dark:bg-slate-900 p-6 lg:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                        <div class="flex items-center space-x-4 mb-6">
+                            <div class="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-full flex items-center justify-center text-blue-500 text-2xl">
+                                <i class="fa-brands fa-bluetooth-b"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-lg font-bold">เครื่องพิมพ์ Bluetooth</h2>
+                                <p class="text-sm text-gray-400">เชื่อมต่อแบบไร้สายผ่าน Bluetooth</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg">
+                                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">สถานะ: <span id="bt-printer-status" class="font-bold text-red-500">ยังไม่ได้เชื่อมต่อ</span></span>
+                            </div>
+                            <button onclick="connectBluetoothPrinter()" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md transition-colors">
+                                <i class="fa-solid fa-search mr-2"></i> ค้นหาและเชื่อมต่อเครื่องพิมพ์ Bluetooth
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Page: Shop Settings -->
+            <section id="page-shop-settings" class="hidden flex-col h-full">
+                <h1 class="text-2xl lg:text-3xl font-bold mb-6">ตั้งค่าร้านค้า</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <!-- Settings Form -->
+                    <div class="w-full bg-white dark:bg-slate-900 p-6 lg:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
+                        <form id="shop-settings-form" onsubmit="saveShopSettings(event)" class="space-y-6">
+                            <div>
+                                <label for="shop-name" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">ชื่อร้าน</label>
+                                <input type="text" id="shop-name" oninput="updateReceiptPreview()" placeholder="เช่น Washlover สุขุมวิท" inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                            </div>
+                            <div>
+                                <label for="shop-address" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">ที่อยู่ (สำหรับแสดงบนใบเสร็จ)</label>
+                                <textarea id="shop-address" oninput="updateReceiptPreview()" rows="3" placeholder="123 ถ.สุขุมวิท แขวงคลองเตย..." inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm"></textarea>
+                            </div>
+                            <div>
+                                <label for="shop-phone" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">เบอร์โทรศัพท์ติดต่อ</label>
+                                <input type="tel" id="shop-phone" oninput="updateReceiptPreview()" placeholder="081-234-5678" inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                            </div>
+                            <div>
+                                <label for="shop-receipt-type" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">รูปแบบใบเสร็จ</label>
+                                <select id="shop-receipt-type" onchange="updateReceiptPreview()" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:border-brand-blue text-sm">
+                                    <option value="summary">ใบสรุปรายการ</option>
+                                    <option value="tax_invoice">ใบกำกับภาษีอย่างย่อ</option>
+                                </select>
+                            </div>
+                            <div class="pt-2">
+                                <button type="submit" class="w-full py-3 bg-brand-blue text-white rounded-xl font-bold text-sm hover:bg-opacity-95 shadow-md">
+                                    <i class="fa-solid fa-save mr-2"></i>บันทึกการตั้งค่า
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Receipt Preview -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 text-gray-600 dark:text-gray-400">ตัวอย่างใบเสร็จ</h3>
+                        <div class="bg-white dark:bg-slate-900 w-full max-w-[380px] p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 mx-auto lg:mx-0">
+                            <div class="text-center border-b border-dashed border-gray-300 dark:border-slate-700 pb-4 mb-4">
+                                <h3 id="preview-shop-name" class="text-xl font-bold">Washlover</h3>
+                                <p id="preview-shop-address" class="text-xs text-gray-500 mt-1"></p>
+                                <p id="preview-shop-phone" class="text-xs text-gray-500"></p>
+                                <p id="preview-receipt-title" class="text-sm text-gray-500 mt-2">ใบสรุปรายการ</p>
+                            </div>
+                            <div class="text-sm space-y-2">
+                                <div class="flex justify-between text-gray-500"><span>ยอดรวม</span><span>฿100.00</span></div>
+                                <div class="flex justify-between text-red-500"><span>ส่วนลด</span><span>-฿10.00</span></div>
+                                <div class="flex justify-between text-gray-500"><span>ภาษีบริการ (5%)</span><span>฿4.50</span></div>
+                                <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-gray-200 dark:border-slate-700"><span>ยอดสุทธิ</span><span>฿94.50</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Add/Edit Service -->
+    <div id="service-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md p-6 rounded-3xl shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-service-title" class="text-xl font-bold">เพิ่มบริการใหม่</h3>
+                <button onclick="closeServiceModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form id="service-form" onsubmit="saveServiceForm(event)" class="space-y-4">
+                <input type="hidden" id="service-id-input">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">ชื่อบริการ</label>
+                    <input type="text" id="service-name-input" required placeholder="เช่น ขนาด 12 kg." inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">รายละเอียด (คำอธิบาย)</label>
+                    <input type="text" id="service-desc-input" required placeholder="เช่น เครื่องซักผ้า" inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">ลิงก์รูปภาพ (URL)</label>
+                    <input type="url" id="service-img-input" placeholder="https://..." inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">หมวดหมู่</label>
+                    <select id="service-category-input" required class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:outline-none focus:border-brand-blue text-sm">
+                        <option value="เครื่องซัก">เครื่องซัก</option>
+                        <option value="เครื่องอบ">เครื่องอบ</option>
+                        <option value="น้ำยาซักผ้า">น้ำยาซักผ้า</option>
+                        <option value="น้ำยาปรับผ้านุ่ม">น้ำยาปรับผ้านุ่ม</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase mb-1">ราคา (บาท)</label>
+                    <input type="number" step="0.01" min="0" id="service-price-input" required placeholder="0.00" inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-brand-blue dark:focus:border-brand-blue text-sm">
+                </div>
+                <div class="pt-2 flex space-x-3">
+                    <button type="button" onclick="closeServiceModal()" class="w-1/2 py-3 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 rounded-xl font-bold text-sm hover:bg-opacity-90">ยกเลิก</button>
+                    <button type="submit" class="w-1/2 py-3 bg-brand-blue text-white rounded-xl font-bold text-sm hover:bg-opacity-95 shadow-md">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Delete Confirmation -->
+    <div id="delete-confirm-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center mb-4">
+                <i class="fa-solid fa-trash-can text-3xl text-red-500"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">ยืนยันการลบ</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">กรุณากรอกรหัสผ่านเพื่อยืนยันการลบ</p>
+            <div class="w-full mb-4 text-left">
+                <label for="delete-confirm-password" class="block text-xs font-semibold text-gray-400 uppercase mb-1">รหัสผ่านผู้ดูแล</label>
+                <input type="password" id="delete-confirm-password" inputmode="none" readonly class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-transparent focus:outline-none focus:border-red-500 dark:focus:border-red-500 text-sm" placeholder="กรอกรหัสผ่านเพื่อยืนยัน">
+                <p id="delete-error-msg" class="text-red-500 text-xs mt-1 h-4"></p>
+            </div>
+            <div class="flex w-full space-x-3">
+                <button onclick="closeDeleteModal()" class="w-1/2 py-3 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 rounded-xl font-bold text-sm hover:bg-opacity-90">ยกเลิก</button>
+                <button id="confirm-delete-btn" onclick="executeDelete()" class="w-1/2 py-3 bg-red-500 text-white rounded-xl font-bold text-sm hover:bg-red-600 shadow-md">ยืนยันลบ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed top-8 right-8 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-lg z-[999] transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-check-circle"></i>
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <!-- Universal On-Screen Keyboard -->
+    <div id="kb-overlay" class="kb-overlay">
+        <div class="kb-container">
+            <div id="kb-display" class="kb-display"></div>
+            <div id="kb-layout-container">
+                <!-- Keyboard layouts will be injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultMenuItems = [{
+            id: 1,
+            name: "เครื่องซัก 1 (12kg)",
+            desc: "เครื่องซักผ้า",
+            price: 40.0,
+            category: "เครื่องซัก",
+            image: "https://img2.pic.in.th/wash.png"
+        }, {
+            id: 2,
+            name: "เครื่องซัก 2 (16kg)",
+            desc: "เครื่องซักผ้า",
+            price: 50.0,
+            category: "เครื่องซัก",
+            image: "https://img2.pic.in.th/wash.png"
+        }, {
+            id: 3,
+            name: "เครื่องซัก 3 (21kg)",
+            desc: "เครื่องซักผ้า",
+            price: 60.0,
+            category: "เครื่องซัก",
+            image: "https://img2.pic.in.th/wash.png"
+        }, {
+            id: 4,
+            name: "เครื่องซัก 4 (12kg)",
+            desc: "เครื่องซักผ้า",
+            price: 40.0,
+            category: "เครื่องซัก",
+            image: "https://img2.pic.in.th/wash.png"
+        }, {
+            id: 5,
+            name: "เครื่องซัก 5 (16kg)",
+            desc: "เครื่องซักผ้า",
+            price: 50.0,
+            category: "เครื่องซัก",
+            image: "https://img2.pic.in.th/wash.png"
+        }, {
+            id: 6,
+            name: "เครื่องซัก 6 (21kg)",
+            desc: "เครื่องซักผ้า",
+            price: 60.0,
+            category: "เครื่องซัก",
+            image: "https://img2.pic.in.th/wash.png"
+        }, {
+            id: 7,
+            name: "เครื่องอบ 1 (12kg)",
+            desc: "เครื่องอบผ้า",
+            price: 40.0,
+            category: "เครื่องอบ",
+            image: "https://img2.pic.in.th/dry.png"
+        }, {
+            id: 8,
+            name: "เครื่องอบ 2 (16kg)",
+            desc: "เครื่องอบผ้า",
+            price: 50.0,
+            category: "เครื่องอบ",
+            image: "https://img2.pic.in.th/dry.png"
+        }, {
+            id: 9,
+            name: "เครื่องอบ 3 (21kg)",
+            desc: "เครื่องอบผ้า",
+            price: 60.0,
+            category: "เครื่องอบ",
+            image: "https://img2.pic.in.th/dry.png"
+        }, {
+            id: 10,
+            name: "เครื่องอบ 4 (12kg)",
+            desc: "เครื่องอบผ้า",
+            price: 40.0,
+            category: "เครื่องอบ",
+            image: "https://img2.pic.in.th/dry.png"
+        }, {
+            id: 11,
+            name: "เครื่องอบ 5 (16kg)",
+            desc: "เครื่องอบผ้า",
+            price: 50.0,
+            category: "เครื่องอบ",
+            image: "https://img2.pic.in.th/dry.png"
+        }, {
+            id: 12,
+            name: "เครื่องอบ 6 (21kg)",
+            desc: "เครื่องอบผ้า",
+            price: 60.0,
+            category: "เครื่องอบ",
+            image: "https://img2.pic.in.th/dry.png"
+        }, {
+            id: 13,
+            name: "บรีสเอกเซล",
+            desc: "สูตรเข้มข้น อัลตร้า คลีน สีเขียว",
+            price: 5.0,
+            category: "น้ำยาซักผ้า",
+            image: "https://img1.pic.in.th/images/dent1.png"
+        }, {
+            id: 14,
+            name: "บรีส เอกเซล",
+            desc: "สูตรเข้มข้น กลิ่น พิงค์ โฟลรัล สีชมพู",
+            price: 5.0,
+            category: "น้ำยาซักผ้า",
+            image: "https://img2.pic.in.th/dent2.png"
+        }, {
+            id: 15,
+            name: "เอสเซ้นซ์ เดลี่แคร์",
+            desc: "กลิ่นฟลอรัล",
+            price: 5.0,
+            category: "น้ำยาซักผ้า",
+            image: "https://img1.pic.in.th/images/dent3.png"
+        }, {
+            id: 16,
+            name: "บรีส เอกเซล",
+            desc: "ชนิดน้ำ สูตรเข้มข้น",
+            price: 5.0,
+            category: "น้ำยาซักผ้า",
+            image: "https://img1.pic.in.th/images/dent4.png"
+        }, {
+            id: 17,
+            name: "ดาวน์นี่ การ์เด้นบลูม",
+            desc: "สูตรเข้มข้น",
+            price: 5.0,
+            category: "น้ำยาปรับผ้านุ่ม",
+            image: "https://img2.pic.in.th/soft1.png"
+        }, {
+            id: 18,
+            name: "ปรับผ้านุ่ม ดาวน์นี่",
+            desc: "ลาเวนเดอร์ ฝรั่งเศส ถุง ม่วง",
+            price: 5.0,
+            category: "น้ำยาปรับผ้านุ่ม",
+            image: "https://img2.pic.in.th/soft2.png"
+        }, {
+            id: 19,
+            name: "ดาวน์นี่ น้ำยาปรับผ้านุ่ม",
+            desc: "กลิ่นหอมช่อดอกไม้อันแสนสดชื่น สีฟ้า",
+            price: 5.0,
+            category: "น้ำยาปรับผ้านุ่ม",
+            image: "https://img1.pic.in.th/images/soft3.png"
+        }, {
+            id: 20,
+            name: "ดาวน์นี่ น้ำยาปรับผ้านุ่ม",
+            desc: "กลิ่น มิสทิคมิสทิค",
+            price: 5.0,
+            category: "น้ำยาปรับผ้านุ่ม",
+            image: "https://img2.pic.in.th/soft4.png"
+        }, {
+            id: 21,
+            name: "วอทเลิฟเวอร์",
+            desc: "สูตรเข้มข้นพิเศษ",
+            price: 10.0,
+            category: "น้ำยาซักผ้า",
+            image: "https://img2.pic.in.th/washpro.png"
+        }, {
+            id: 22,
+            name: "วอทเลิฟเวอร์",
+            desc: "สูตรเข้มข้นหอมพิเศษ",
+            price: 10.0,
+            category: "น้ำยาปรับผ้านุ่ม",
+            image: "https://img1.pic.in.th/images/wash279ba87fc0c30f829.png"
+        }];
+
+        const DATA_VERSION_KEY = 'washlover_data_version';
+        const SERVICES_KEY = 'washlover_services_v2';
+        const CURRENT_DATA_VERSION = 'v1.3'; // ใช้เวอร์ชันเดียวกันกับ index.html
+
+        let menuItems = JSON.parse(localStorage.getItem(SERVICES_KEY));
+        const storedVersion = localStorage.getItem(DATA_VERSION_KEY);
+
+        if (!menuItems || storedVersion !== CURRENT_DATA_VERSION) {
+            menuItems = defaultMenuItems;
+            localStorage.setItem(SERVICES_KEY, JSON.stringify(menuItems));
+            localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+        }
+
+        let itemToDeleteId = null;
+        let sortConfig = {
+            key: null,
+            direction: 'ascending'
+        };
+        let currentCategoryFilter = 'ทั้งหมด';
+
+        function getCategoryIcon(item) {
+            if (item.image) return item.image;
+            if (item.category === "เครื่องอบ") return "https://img2.pic.in.th/dry.png";
+            if (item.category === "น้ำยาซักผ้า") return "https://cdn-icons-png.flaticon.com/512/2917/2917993.png";
+            if (item.category === "น้ำยาปรับผ้านุ่ม") return "https://cdn-icons-png.flaticon.com/512/2555/2555012.png";
+            return "https://img2.pic.in.th/wash.png";
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initAdmin();
+            new OnScreenKeyboard().init();
+            initTheme();
+        });
+
+        function initAdmin() {
+            // Show login screen by default every time the page is loaded.
+            document.getElementById('admin-login-screen').classList.remove('hidden');
+            document.getElementById('admin-layout').classList.add('hidden');
+            // Reset form fields
+            document.getElementById('admin-username').value = 'admin';
+            document.getElementById('admin-password').value = 'admin1234';
+        }
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const user = document.getElementById('admin-username').value;
+            const pass = document.getElementById('admin-password').value;
+
+            // Dummy check
+            if (user === 'admin' && pass === 'admin1234') {
+                document.getElementById('admin-login-screen').classList.add('hidden');
+                document.getElementById('admin-layout').classList.remove('hidden');
+                switchPage('แดชบอร์ด'); // Go to dashboard after login
+            } else {
+                alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+            }
+        }
+
+        function handleAdminLogout() {
+            // Simply re-initialize the page to show the login screen
+            initAdmin();
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function switchPage(pageName) {
+            const menuMap = {
+                'แดชบอร์ด': 'menu-dashboard',
+                'จัดการบริการ': 'menu-manage',
+                'ตั้งค่าร้านค้า': 'menu-shop-settings',
+                'ตั้งค่า Printer': 'menu-printer',
+            };
+
+            Object.values(menuMap).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.classList.remove('active-sidebar');
+            });
+
+            const activeBtn = document.getElementById(menuMap[pageName]);
+            if (activeBtn) activeBtn.classList.add('active-sidebar');
+
+            document.getElementById('page-dashboard').classList.add('hidden');
+            document.getElementById('page-manage').classList.add('hidden');
+            document.getElementById('page-dynamic').classList.add('hidden');
+            document.getElementById('page-shop-settings').classList.add('hidden');
+            document.getElementById('page-printer-settings').classList.add('hidden');
+
+            if (pageName === 'แดชบอร์ด') {
+                document.getElementById('page-dashboard').classList.remove('hidden');
+            } else if (pageName === 'จัดการบริการ') {
+                document.getElementById('page-manage').classList.remove('hidden');
+                renderManagementTable();
+            } else if (pageName === 'ตั้งค่าร้านค้า') {
+                document.getElementById('page-shop-settings').classList.remove('hidden');
+                loadShopSettings();
+            } else if (pageName === 'ตั้งค่า Printer') {
+                document.getElementById('page-printer-settings').classList.remove('hidden');
+            } else {
+                document.getElementById('page-dynamic').classList.remove('hidden');
+                document.getElementById('dynamic-title').innerText = `กำลังพัฒนาหน้า: ${pageName}`;
+            }
+            document.getElementById('mobile-page-title').innerText = pageName;
+            closeSidebarMobile();
+        }
+
+        function setSort(key) {
+            let direction = 'ascending';
+            if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+                direction = 'descending';
+            } else if (sortConfig.key === key && sortConfig.direction === 'descending') {
+                // Reset sort
+                sortConfig = {
+                    key: null,
+                    direction: 'ascending'
+                };
+                renderManagementTable();
+                return;
+            }
+            sortConfig = {
+                key,
+                direction
+            };
+            renderManagementTable();
+        }
+
+        function setCategoryFilter(category) {
+            currentCategoryFilter = category;
+            renderManagementTable();
+        }
+
+        function renderManagementTable() {
+            const container = document.getElementById('service-tables-container');
+            container.innerHTML = '';
+
+            const categoryOrder = ['เครื่องซัก', 'เครื่องอบ', 'น้ำยาซักผ้า', 'น้ำยาปรับผ้านุ่ม', 'อื่นๆ'];
+            const allCategories = [...new Set(menuItems.map(item => item.category))];
+
+            // Sort all unique categories based on predefined order
+            const sortedCategories = allCategories.sort((a, b) => {
+                const indexA = categoryOrder.indexOf(a);
+                const indexB = categoryOrder.indexOf(b);
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+
+            // Determine which categories to render based on the filter
+            const categoriesToRender = currentCategoryFilter === 'ทั้งหมด' ?
+                sortedCategories : [currentCategoryFilter];
+
+            // Update category filter tabs UI
+            const tabsContainer = document.getElementById('category-filter-tabs');
+            const tabCategories = ['ทั้งหมด', ...sortedCategories];
+            tabsContainer.innerHTML = '';
+            tabCategories.forEach(cat => {
+                const isActive = cat === currentCategoryFilter;
+                const activeClasses = 'border-brand-blue text-brand-blue';
+                const inactiveClasses = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600';
+                const button = document.createElement('button');
+                button.onclick = () => setCategoryFilter(cat);
+                button.className = `whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm ${isActive ? activeClasses : inactiveClasses}`;
+                button.innerText = cat;
+                tabsContainer.appendChild(button);
+            });
+
+            if (categoriesToRender.length === 0 || menuItems.length === 0) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-gray-400">ไม่มีข้อมูลบริการ</div>`;
+                return;
+            }
+
+            categoriesToRender.forEach(category => {
+                let itemsInCategory = menuItems.filter(item => item.category === category);
+
+                const tableRows = itemsInCategory.map(item => {
+                    const imageUrl = getCategoryIcon(item);
+                    return `
+                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
+                            <td class="p-4">
+                                <div class="w-10 h-10 p-1 bg-gray-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+                                    <img src="${imageUrl}" alt="${item.category}" class="h-full w-full object-contain">
+                                </div>
+                            </td>
+                            <td class="p-4">
+                                <div class="font-bold text-gray-800 dark:text-gray-200">${item.name}</div>
+                                <div class="text-[10px] text-gray-400 mt-1 max-w-xs truncate">${item.desc}</div>
+                            </td>
+                            <td class="p-4 font-bold text-gray-700 dark:text-gray-300">฿${parseFloat(item.price).toFixed(2)}</td>
+                            <td class="p-4 text-center">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <button onclick="openServiceModal(${item.id})" class="p-2 text-brand-blue hover:bg-brand-blue/10 rounded-lg transition-colors" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="openDeleteModal(${item.id})" class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const tableHTML = `
+                    <div>
+                        <h3 class="text-lg font-bold text-brand-blue mb-3">${category}</h3>
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 dark:bg-slate-800/50 border-b border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wider">
+                                            <th class="p-4 w-20">รูปภาพ</th>
+                                            <th class="p-4">บริการ</th>
+                                            <th class="p-4 w-32">ราคา</th>
+                                            <th class="p-4 text-center w-28">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
+                                        ${tableRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += tableHTML;
+            });
+        }
+
+        function saveServicesToStorage() {
+            localStorage.setItem('washlover_services_v2', JSON.stringify(menuItems));
+            renderManagementTable();
+        }
+
+        function openServiceModal(id = null) {
+            const modal = document.getElementById('service-modal');
+            const title = document.getElementById('modal-service-title');
+            const form = document.getElementById('service-form');
+
+            form.reset();
+            document.getElementById('service-id-input').value = '';
+
+            if (id) {
+                const item = menuItems.find(i => i.id === id);
+                if (item) {
+                    title.innerText = "แก้ไขบริการ";
+                    document.getElementById('service-id-input').value = item.id;
+                    document.getElementById('service-name-input').value = item.name;
+                    document.getElementById('service-desc-input').value = item.desc || "";
+                    document.getElementById('service-img-input').value = item.image || "";
+                    document.getElementById('service-category-input').value = item.category;
+                    document.getElementById('service-price-input').value = item.price;
+                }
+            } else {
+                title.innerText = "เพิ่มบริการใหม่";
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeServiceModal() {
+            document.getElementById('service-modal').classList.add('hidden');
+        }
+
+        function saveServiceForm(event) {
+            event.preventDefault();
+            const idInput = document.getElementById('service-id-input').value;
+            const name = document.getElementById('service-name-input').value;
+            const desc = document.getElementById('service-desc-input').value;
+            const image = document.getElementById('service-img-input').value;
+            const category = document.getElementById('service-category-input').value;
+            const price = parseFloat(document.getElementById('service-price-input').value);
+
+            if (idInput) {
+                const itemIndex = menuItems.findIndex(i => i.id == idInput);
+                if (itemIndex > -1) {
+                    menuItems[itemIndex] = {
+                        id: parseInt(idInput),
+                        name,
+                        desc,
+                        image,
+                        category,
+                        price
+                    };
+                }
+            } else {
+                const newId = menuItems.length > 0 ? Math.max(...menuItems.map(i => i.id)) + 1 : 1;
+                menuItems.push({
+                    id: newId,
+                    name,
+                    desc,
+                    image,
+                    category,
+                    price
+                });
+            }
+
+            saveServicesToStorage();
+            closeServiceModal();
+        }
+
+        function openDeleteModal(id) {
+            itemToDeleteId = id;
+            document.getElementById('delete-confirm-password').value = '';
+            document.getElementById('delete-error-msg').innerText = '';
+            document.getElementById('delete-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            itemToDeleteId = null;
+            document.getElementById('delete-confirm-password').value = '';
+            document.getElementById('delete-error-msg').innerText = '';
+            document.getElementById('delete-confirm-modal').classList.add('hidden');
+        }
+
+        function executeDelete() {
+            const passwordInput = document.getElementById('delete-confirm-password');
+            const errorMsg = document.getElementById('delete-error-msg');
+            const enteredPassword = passwordInput.value;
+
+            // ตรวจสอบว่ามีการกรอกรหัสผ่านหรือไม่ (ไม่ตรวจสอบความถูกต้อง)
+            if (enteredPassword.trim() === '') {
+                errorMsg.innerText = 'กรุณากรอกรหัสผ่านเพื่อยืนยัน';
+                passwordInput.focus();
+                return;
+            }
+
+            // Find the item name before deleting for the toast message
+            const itemToDelete = menuItems.find(item => item.id === itemToDeleteId);
+            const deletedItemName = itemToDelete ? itemToDelete.name : 'บริการ';
+
+            if (itemToDeleteId !== null) {
+                menuItems = menuItems.filter(item => item.id !== itemToDeleteId);
+                saveServicesToStorage();
+                closeDeleteModal();
+                showToast(`ลบ "${deletedItemName}" เรียบร้อยแล้ว`);
+            }
+        }
+
+        let toastTimeout;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
+
+            clearTimeout(toastTimeout);
+
+            toastMessage.innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000); // Hide after 3 seconds
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
+        }
+
+        function closeSidebarMobile() {
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.add('hidden');
+        }
+
+        // --- Printer Connection Logic ---
+        let connectedPrinterDevice = null;
+        let printerType = null;
+        let printerEndpoint = 1;
+
+        async function connectUSBPrinter() {
+            const statusEl = document.getElementById('usb-printer-status');
+            try {
+                if (!navigator.usb) throw new Error('เบราว์เซอร์นี้ไม่รองรับ WebUSB');
+
+                const device = await navigator.usb.requestDevice({
+                    filters: []
+                });
+                await device.open();
+                if (device.configuration === null) await device.selectConfiguration(1);
+
+                let targetInterface = null;
+                for (const iface of device.configuration.interfaces) {
+                    for (const alt of iface.alternates) {
+                        if (alt.endpoints.find(e => e.direction === 'out')) {
+                            targetInterface = iface.interfaceNumber;
+                            break;
+                        }
+                    }
+                    if (targetInterface !== null) break;
+                }
+
+                if (targetInterface === null) targetInterface = 0; // Fallback
+
+                await device.claimInterface(targetInterface);
+
+                connectedPrinterDevice = device;
+                printerType = 'usb';
+                statusEl.textContent = `เชื่อมต่อแล้ว: ${device.productName}`;
+                statusEl.className = 'font-bold text-emerald-500';
+                alert('เชื่อมต่อเครื่องพิมพ์ USB สำเร็จ!');
+
+            } catch (err) {
+                console.error("USB Connection Error:", err);
+                statusEl.textContent = 'เชื่อมต่อล้มเหลว';
+                statusEl.className = 'font-bold text-red-500';
+                alert(`เกิดข้อผิดพลาด: ${err.message}`);
+            }
+        }
+
+        async function connectBluetoothPrinter() {
+            const statusEl = document.getElementById('bt-printer-status');
+            try {
+                if (!navigator.bluetooth) throw new Error('เบราว์เซอร์นี้ไม่รองรับ Web Bluetooth');
+
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Generic Serial Port Service
+                });
+
+                const server = await device.gatt.connect();
+                connectedPrinterDevice = server;
+                printerType = 'ble';
+                statusEl.textContent = `เชื่อมต่อแล้ว: ${device.name || 'Unknown Device'}`;
+                statusEl.className = 'font-bold text-emerald-500';
+                alert('เชื่อมต่อเครื่องพิมพ์ Bluetooth สำเร็จ!');
+
+            } catch (err) {
+                console.error("Bluetooth Connection Error:", err);
+                statusEl.textContent = 'เชื่อมต่อล้มเหลว';
+                statusEl.className = 'font-bold text-red-500';
+                alert(`เกิดข้อผิดพลาด: ${err.message}`);
+            }
+        }
+
+        // --- Shop Settings Logic ---
+        function loadShopSettings() {
+            const settings = JSON.parse(localStorage.getItem('washlover_shop_settings')) || {};
+            document.getElementById('shop-name').value = settings.name || 'Washlover';
+            document.getElementById('shop-address').value = settings.address || '';
+            document.getElementById('shop-phone').value = settings.phone || '';
+            document.getElementById('shop-receipt-type').value = settings.receiptType || 'summary';
+            updateReceiptPreview();
+        }
+
+        function saveShopSettings(event) {
+            event.preventDefault();
+            const settings = {
+                name: document.getElementById('shop-name').value,
+                address: document.getElementById('shop-address').value,
+                phone: document.getElementById('shop-phone').value,
+                receiptType: document.getElementById('shop-receipt-type').value,
+            };
+            localStorage.setItem('washlover_shop_settings', JSON.stringify(settings));
+            showToast('บันทึกการตั้งค่าร้านค้าเรียบร้อยแล้ว');
+        }
+
+        function updateReceiptPreview() {
+            const name = document.getElementById('shop-name').value;
+            const address = document.getElementById('shop-address').value;
+            const phone = document.getElementById('shop-phone').value;
+            const receiptType = document.getElementById('shop-receipt-type').value;
+
+            document.getElementById('preview-shop-name').innerText = name || 'ชื่อร้าน';
+            document.getElementById('preview-shop-address').innerText = address || 'ที่อยู่ร้าน';
+            document.getElementById('preview-shop-phone').innerText = phone || 'เบอร์โทรศัพท์';
+            document.getElementById('preview-receipt-title').innerText = receiptType === 'tax_invoice' ? 'ใบกำกับภาษีอย่างย่อ' : 'ใบสรุปรายการ';
+        }
+
+        // --- Universal On-Screen Keyboard Logic ---
+        class OnScreenKeyboard {
+            constructor() {
+                this.activeInput = null;
+                this.capsLock = false;
+                this.shift = false;
+                this.currentLayout = 'text_th';
+                this.layouts = {
+                    text_en: [
+                        ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+                        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+                        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+                        ['shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'backspace'],
+                        ['lang', '@', '.com', 'space', 'ok']
+                    ],
+                    text_en_shift: [
+                        ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'],
+                        ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+                        ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+                        ['shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'backspace'],
+                        ['lang', '@', '.com', 'space', 'ok']
+                    ],
+                    text_th: [
+                        ['ๅ', '/', '-', 'ภ', 'ถ', 'ุ', 'ึ', 'ค', 'ต', 'จ', 'ข', 'ช'],
+                        ['ๆ', 'ไ', 'ำ', 'พ', 'ะ', 'ั', 'ี', 'ร', 'น', 'ย', 'บ', 'ล', 'ฃ'],
+                        ['shift', 'ผ', 'ป', 'แ', 'อ', 'ิ', 'ื', 'ท', 'ม', 'ใ', 'ฝ', 'backspace'],
+                        ['lang', '@', '.com', 'space', 'ok']
+                    ],
+                    text_th_shift: [
+                        ['+', '๑', '๒', '๓', '๔', 'ู', '฿', '๕', '๖', '๗', '๘', '๙', '๐', '"', 'ฎ', 'ฑ', 'ธ', 'ํ', '๊', 'ณ'],
+                        ['ฯ', 'ญ', 'ฐ', ',', 'ฅ', 'ฤ', 'ฆ', 'ฏ', 'โ', 'ฌ', '็', '๋', 'ษ', 'ศ', 'ซ', '.'],
+                        ['shift', '(', ')', 'ฉ', 'ฮ', 'ฺ', '์', '?', 'ฒ', 'ฬ', 'ภ', 'backspace'],
+                        ['lang', '@', '.com', 'space', 'ok']
+                    ],
+                    numeric: [
+                        ['1', '2', '3'],
+                        ['4', '5', '6'],
+                        ['7', '8', '9'],
+                        ['clear', '0', '.', 'backspace'],
+                        ['hide', 'ok']
+                    ],
+                    tel: [
+                        ['1', '2', '3'],
+                        ['4', '5', '6'],
+                        ['7', '8', '9'],
+                        ['hide', '0', 'backspace'],
+                        ['ok']
+                    ]
+                };
+            }
+
+            init() {
+                this.overlay = document.getElementById('kb-overlay');
+                this.display = document.getElementById('kb-display');
+                this.layoutContainer = document.getElementById('kb-layout-container');
+
+                document.querySelectorAll('input[readonly], textarea[readonly]').forEach(input => {
+                    input.addEventListener('click', (e) => {
+                        this.activeInput = e.target;
+                        this.show();
+                    });
+                });
+            }
+
+            show() {
+                if (!this.activeInput) return;
+                this.display.textContent = this.activeInput.value;
+                this.overlay.classList.add('visible');
+
+                let layoutType = 'text_th';
+                const inputType = this.activeInput.type;
+                if (inputType === 'number' || this.activeInput.inputmode === 'decimal') layoutType = 'numeric';
+                if (inputType === 'tel') layoutType = 'tel';
+                if (inputType === 'email' || inputType === 'url') layoutType = 'text_en';
+
+                this.renderLayout(layoutType);
+            }
+
+            hide() {
+                this.overlay.classList.remove('visible');
+                this.activeInput = null;
+            }
+
+            renderLayout(layoutName) {
+                this.currentLayout = layoutName;
+                let finalLayoutName = layoutName;
+                if (this.shift && (layoutName === 'text_en' || layoutName === 'text_th')) {
+                    finalLayoutName = `${layoutName}_shift`;
+                }
+
+                const layout = this.layouts[finalLayoutName] || this.layouts[layoutName];
+                if (!layout) return;
+
+                this.layoutContainer.innerHTML = '';
+                const layoutFragment = document.createDocumentFragment();
+                const kbLayoutDiv = document.createElement('div');
+                kbLayoutDiv.className = 'kb-layout';
+
+                layout.forEach(row => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'kb-row';
+                    row.forEach(key => {
+                        const keyBtn = this.createKey(key);
+                        rowDiv.appendChild(keyBtn);
+                    });
+                    kbLayoutDiv.appendChild(rowDiv);
+                });
+                layoutFragment.appendChild(kbLayoutDiv);
+                this.layoutContainer.appendChild(layoutFragment);
+            }
+
+            createKey(key) {
+                const keyBtn = document.createElement('button');
+                keyBtn.className = 'kb-key';
+                keyBtn.setAttribute('type', 'button');
+                let keyContent = key;
+
+                switch (key) {
+                    case 'backspace':
+                        keyContent = '<i class="fa-solid fa-delete-left"></i>';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.updateValue(this.display.textContent.slice(0, -1));
+                        break;
+                    case 'shift':
+                        keyContent = '<i class="fa-solid fa-arrow-up"></i>';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => {
+                            this.shift = !this.shift;
+                            this.renderLayout(this.currentLayout);
+                        };
+                        if (this.shift) keyBtn.classList.add('primary');
+                        break;
+                    case 'space':
+                        keyContent = '<i class="fa-solid fa-keyboard"></i>';
+                        keyBtn.onclick = () => this.updateValue(this.display.textContent + ' ');
+                        break;
+                    case 'ok':
+                        keyContent = 'OK';
+                        keyBtn.classList.add('action', 'primary');
+                        keyBtn.onclick = () => {
+                            this.activeInput.dispatchEvent(new Event('input', {
+                                bubbles: true
+                            }));
+                            this.hide();
+                        };
+                        break;
+                    case 'hide':
+                        keyContent = 'ซ่อน';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.hide();
+                        break;
+                    case 'clear':
+                        keyContent = 'C';
+                        keyBtn.classList.add('action', 'danger');
+                        keyBtn.onclick = () => this.updateValue('');
+                        break;
+                    case 'lang':
+                        keyContent = this.currentLayout === 'text_th' ? 'EN' : 'ไทย';
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.renderLayout(this.currentLayout === 'text_th' ? 'text_en' : 'text_th');
+                        break;
+                    case '@':
+                    case '.com':
+                        keyBtn.classList.add('action');
+                        keyBtn.onclick = () => this.updateValue(this.display.textContent + key);
+                        break;
+                    default:
+                        keyBtn.onclick = () => {
+                            this.updateValue(this.display.textContent + key);
+                            if (this.shift) {
+                                this.shift = false;
+                            }
+                            this.renderLayout(this.currentLayout);
+                        };
+                        break;
+                }
+                keyBtn.innerHTML = keyContent;
+                keyBtn.dataset.key = key;
+                return keyBtn;
+            }
+
+            updateValue(newValue) {
+                if (this.activeInput) {
+                    const maxLength = this.activeInput.maxLength;
+                    if (maxLength && maxLength > 0 && newValue.length > maxLength) {
+                        newValue = newValue.substring(0, maxLength);
+                    }
+                    this.activeInput.value = newValue;
+                    this.display.textContent = newValue;
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
